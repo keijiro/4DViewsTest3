@@ -19,8 +19,8 @@ RenderTexture:
   m_MipCount: -1
   m_DepthFormat: 0
   m_ColorFormat: 8
-  m_MipMap: 1
-  m_GenerateMips: 1
+  m_MipMap: 0
+  m_GenerateMips: 0
   m_SRGB: 0
   m_UseDynamicScale: 0
   m_BindMS: 0
@@ -28,10 +28,10 @@ RenderTexture:
   m_TextureSettings:
     serializedVersion: 2
     m_FilterMode: 2
-    m_Aniso: 4
+    m_Aniso: 8
     m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
+    m_WrapU: 1
+    m_WrapV: 1
+    m_WrapW: 1
   m_Dimension: 2
   m_VolumeDepth: 1
