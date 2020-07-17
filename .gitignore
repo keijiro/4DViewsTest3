@@ -18,6 +18,7 @@ Desktop.ini
 /Logs
 /Recordings
 /Temp
+/UserSettings
 
 /Assets/Alembic/*.abc
 /Assets/StreamingAssets/*.mov
