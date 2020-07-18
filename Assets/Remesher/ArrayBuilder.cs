@@ -12,6 +12,18 @@ sealed partial class Remesher
 {
     #region Internal structs
 
+    struct Arguments
+    {
+        public Mesh Source;
+        public float4x4 Effector;
+
+        public Arguments(Mesh source, Transform effector)
+        {
+            Source = source;
+            Effector = effector.worldToLocalMatrix;
+        }
+    }
+
     struct Vertex
     {
         public float3 Position;
@@ -63,9 +75,9 @@ sealed partial class Remesher
 
         // Simply enumerates all the vertices.
 
-        public static NativeArray<uint> CreateIndexArray(Mesh source)
+        public static NativeArray<uint> CreateIndexArray(Arguments args)
         {
-            var count = (int)source.GetIndexCount(0);
+            var count = (int)args.Source.GetIndexCount(0);
             var array = TempJobMemory<uint>(count);
             new IndexArrayJob { Output = array, Count = count }.Run();
             return array;
@@ -90,9 +102,9 @@ sealed partial class Remesher
         // Retrieve the original vertices using the new mesh API.
         // Then reconstruct a mesh using a Parallel-For job.
 
-        public static NativeArray<Vertex> CreateVertexArray(Mesh source)
+        public static NativeArray<Vertex> CreateVertexArray(Arguments args)
         {
-            using (var dataArray = Mesh.AcquireReadOnlyMeshData(source))
+            using (var dataArray = Mesh.AcquireReadOnlyMeshData(args.Source))
             {
                 var data = dataArray[0];
 
@@ -117,7 +129,8 @@ sealed partial class Remesher
 
                     // Invoke and wait the array generator job.
                     new VertexArrayJob
-                      { Idx = src_idx, Pos = src_pos, UV0 = src_uv0,
+                      { Idx = src_idx, Pos = src_pos,
+                        UV0 = src_uv0, Eff = args.Effector,
                         Out = out_vtx.Reinterpret<Triangle>(12 * 4) }
                       .Schedule(icount / 3, 64).Complete();
 
@@ -132,10 +145,15 @@ sealed partial class Remesher
             [ReadOnly] public NativeArray<uint> Idx;
             [ReadOnly] public NativeArray<float3> Pos;
             [ReadOnly] public NativeArray<float2> UV0;
+
+            public float4x4 Eff;
+
             [WriteOnly] public NativeArray<Triangle> Out;
 
             public void Execute(int i)
             {
+                var hash = new Klak.Math.XXHash((uint)i);
+
                 var i0 = (int)Idx[i * 3 + 0];
                 var i1 = (int)Idx[i * 3 + 1];
                 var i2 = (int)Idx[i * 3 + 2];
@@ -151,6 +169,19 @@ sealed partial class Remesher
                 var nrm = math.normalize(math.cross(p1 - p0, p2 - p0));
                 var tan = math.float4(math.normalize(
                   math.cross(nrm, math.float3(0, 1, 0))), 1);
+
+                var pc = (p0 + p1 + p2) / 3;
+
+                var mod = math.saturate(math.mul(Eff, math.float4(pc, 1)).z);
+
+                var sel = hash.Float(0) < 0.1f;
+
+                mod = (sel ?
+                 (math.smoothstep(0, 0.5f, mod) - math.smoothstep(0.5f, 1, mod)) * 20 : 0) + 1 - mod;
+
+                p0 = math.lerp(pc, p0, mod);
+                p1 = math.lerp(pc, p1, mod);
+                p2 = math.lerp(pc, p2, mod);
 
                 Out[i] = new Triangle(new Vertex(p0, nrm, tan, uv0),
                                       new Vertex(p1, nrm, tan, uv1),

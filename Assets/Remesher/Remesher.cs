@@ -17,6 +17,7 @@ sealed partial class Remesher : MonoBehaviour
     #region Editable attributes
 
     [SerializeField] MeshFilter _source = null;
+    [SerializeField] Transform _effector = null;
 
     #endregion
 
@@ -37,16 +38,16 @@ sealed partial class Remesher : MonoBehaviour
     void LateUpdate()
     {
         if (_source == null || _source.sharedMesh == null) return;
-
-        var sourceMesh = _source.sharedMesh;
+        if (_effector == null) return;
 
         SetupMesh();
 
-        using (var vertexArray = ArrayBuilder.CreateVertexArray(sourceMesh))
-        using (var indexArray = ArrayBuilder.CreateIndexArray(sourceMesh))
+        var args = new Arguments(_source.sharedMesh, _effector);
+        using (var vertexArray = ArrayBuilder.CreateVertexArray(args))
+        using (var indexArray = ArrayBuilder.CreateIndexArray(args))
           UpdateMesh(vertexArray, indexArray);
 
-        _mesh.bounds = sourceMesh.bounds;
+        _mesh.bounds = args.Source.bounds;
     }
 
     #endregion
