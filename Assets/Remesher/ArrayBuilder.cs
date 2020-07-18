@@ -4,42 +4,91 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
+//
+// Nested classes/structs of Remesher (only internally used)
+//
+
 sealed partial class Remesher
 {
+    #region Internal structs
+
     struct Vertex
     {
-        public float3 position;
-        public float3 normal;
-        public float4 tangent;
-        public float2 texcoord;
+        public float3 Position;
+        public float3 Normal;
+        public float4 Tangent;
+        public float2 TexCoord;
+
+        public Vertex(float3 position, float3 normal,
+                      float4 tangent, float2 texCoord)
+        {
+            Position = position;
+            Normal = normal;
+            Tangent = tangent;
+            TexCoord = texCoord;
+        }
     }
 
     struct Triangle
     {
-        public Vertex v1;
-        public Vertex v2;
-        public Vertex v3;
+        public Vertex Vertex1;
+        public Vertex Vertex2;
+        public Vertex Vertex3;
+
+        public Triangle(in Vertex v1, in Vertex v2, in Vertex v3)
+        {
+            Vertex1 = v1;
+            Vertex2 = v2;
+            Vertex3 = v3;
+        }
     }
+
+    #endregion
 
     static class ArrayBuilder
     {
-        static NativeArray<T>
-          TempMemory<T>(int length) where T : unmanaged => new NativeArray<T>
-             (length, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+        #region NativeArray allocator
 
-        static NativeArray<T>
-          TempJobMemory<T>(int length) where T : unmanaged => new NativeArray<T>
-             (length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        static NativeArray<T> TempMemory<T>(int length) where T : unmanaged
+            => new NativeArray<T>(length, Allocator.Temp,
+                                  NativeArrayOptions.UninitializedMemory);
+
+        static NativeArray<T> TempJobMemory<T>(int length) where T : unmanaged
+            => new NativeArray<T>(length, Allocator.TempJob,
+                                  NativeArrayOptions.UninitializedMemory);
+
+        #endregion
+
+        #region Index array builder
+
+        // Simply enumerates all the vertices.
 
         public static NativeArray<uint> CreateIndexArray(Mesh source)
         {
             var count = (int)source.GetIndexCount(0);
-            var buffer = TempMemory<uint>(count);
-            for (var i = 0; i < count; i++) buffer[i] = (uint)i;
-            return buffer;
+            var array = TempJobMemory<uint>(count);
+            new IndexArrayJob { Output = array, Count = count }.Run();
+            return array;
         }
 
-        #if NEVER_COMPILE_IT
+        [Unity.Burst.BurstCompile(CompileSynchronously = true)]
+        struct IndexArrayJob : IJob
+        {
+            [WriteOnly] public NativeArray<uint> Output;
+            public int Count;
+
+            public void Execute()
+            {
+                for (var i = 0; i < Count; i++) Output[i] = (uint)i;
+            }
+        }
+
+        #endregion
+
+        #region Vertex array builder
+
+        // Retrieve the original vertices using the new mesh API.
+        // Then reconstruct a mesh using a Parallel-For job.
 
         public static NativeArray<Vertex> CreateVertexArray(Mesh source)
         {
@@ -47,121 +96,68 @@ sealed partial class Remesher
             {
                 var data = dataArray[0];
 
-                Debug.Assert(data.indexFormat == IndexFormat.UInt32);
-
+                // Vertex/index count
                 var vcount = data.vertexCount;
                 var icount = data.GetSubMesh(0).indexCount;
+
+                // Source index array
+                Debug.Assert(data.indexFormat == IndexFormat.UInt32);
                 var src_idx = data.GetIndexData<uint>();
 
-                using (var src_vtx = TempJobMemory<float3>(vcount))
+                // Read buffer allocation
+                using (var src_pos = TempJobMemory<float3>(vcount))
                 using (var src_uv0 = TempJobMemory<float2>(vcount))
                 {
-                    data.GetVertices(src_vtx.Reinterpret<Vector3>());
+                    // Retrieve vertex attribute arrays.
+                    data.GetVertices(src_pos.Reinterpret<Vector3>());
                     data.GetUVs(0, src_uv0.Reinterpret<Vector2>());
 
+                    // Output buffer
                     var out_vtx = TempJobMemory<Vertex>(icount);
 
-                    for (var i = 0; i < icount; i += 3)
-                    {
-                        var i0 = (int)src_idx[i + 0];
-                        var i1 = (int)src_idx[i + 1];
-                        var i2 = (int)src_idx[i + 2];
-
-                        var v0 = src_vtx[i0];
-                        var v1 = src_vtx[i1];
-                        var v2 = src_vtx[i2];
-
-                        var t0 = src_uv0[i0];
-                        var t1 = src_uv0[i1];
-                        var t2 = src_uv0[i2];
-
-                        var n = math.normalize(math.cross(v1 - v0, v2 - v0));
-                        var t = math.float4(math.normalize(math.cross(n, math.float3(0, 1, 0))), 1);
-
-                        out_vtx[i + 0] = new Vertex
-                          { position = v0, normal = n, tangent = t, texcoord = t0 };
-                        out_vtx[i + 1] = new Vertex
-                          { position = v1, normal = n, tangent = t, texcoord = t1 };
-                        out_vtx[i + 2] = new Vertex
-                          { position = v2, normal = n, tangent = t, texcoord = t2 };
-                    }
+                    // Invoke and wait the array generator job.
+                    new VertexArrayJob
+                      { Idx = src_idx, Pos = src_pos, UV0 = src_uv0,
+                        Out = out_vtx.Reinterpret<Triangle>(12 * 4) }
+                      .Schedule(icount / 3, 64).Complete();
 
                     return out_vtx;
                 }
             }
         }
 
-        #else
-
         [Unity.Burst.BurstCompile(CompileSynchronously = true)]
-        struct ReconstructionJob : IJobParallelFor
+        struct VertexArrayJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<uint> indices;
-            [ReadOnly] public NativeArray<float3> vertex;
-            [ReadOnly] public NativeArray<float2> texcoord;
-            [WriteOnly] public NativeArray<Triangle> output;
+            [ReadOnly] public NativeArray<uint> Idx;
+            [ReadOnly] public NativeArray<float3> Pos;
+            [ReadOnly] public NativeArray<float2> UV0;
+            [WriteOnly] public NativeArray<Triangle> Out;
 
             public void Execute(int i)
             {
-                var i0 = (int)indices[i * 3 + 0];
-                var i1 = (int)indices[i * 3 + 1];
-                var i2 = (int)indices[i * 3 + 2];
+                var i0 = (int)Idx[i * 3 + 0];
+                var i1 = (int)Idx[i * 3 + 1];
+                var i2 = (int)Idx[i * 3 + 2];
 
-                var v0 = vertex[i0];
-                var v1 = vertex[i1];
-                var v2 = vertex[i2];
+                var p0 = Pos[i0];
+                var p1 = Pos[i1];
+                var p2 = Pos[i2];
 
-                var t0 = texcoord[i0];
-                var t1 = texcoord[i1];
-                var t2 = texcoord[i2];
+                var uv0 = UV0[i0];
+                var uv1 = UV0[i1];
+                var uv2 = UV0[i2];
 
-                var n = math.normalize(math.cross(v1 - v0, v2 - v0));
-                var t = math.float4(math.normalize(math.cross(n, math.float3(0, 1, 0))), 1);
+                var nrm = math.normalize(math.cross(p1 - p0, p2 - p0));
+                var tan = math.float4(math.normalize(
+                  math.cross(nrm, math.float3(0, 1, 0))), 1);
 
-                output[i] = new Triangle {
-                v1 = new Vertex
-                  { position = v0, normal = n, tangent = t, texcoord = t0 },
-                v2 = new Vertex
-                  { position = v1, normal = n, tangent = t, texcoord = t1 },
-                v3 = new Vertex
-                  { position = v2, normal = n, tangent = t, texcoord = t2 }
-                };
-
+                Out[i] = new Triangle(new Vertex(p0, nrm, tan, uv0),
+                                      new Vertex(p1, nrm, tan, uv1),
+                                      new Vertex(p2, nrm, tan, uv2));
             }
         }
 
-        public static NativeArray<Vertex> CreateVertexArray(Mesh source)
-        {
-            using (var dataArray = Mesh.AcquireReadOnlyMeshData(source))
-            {
-                var data = dataArray[0];
-
-                Debug.Assert(data.indexFormat == IndexFormat.UInt32);
-
-                var vcount = data.vertexCount;
-                var icount = data.GetSubMesh(0).indexCount;
-                var src_idx = data.GetIndexData<uint>();
-
-                using (var src_vtx = TempJobMemory<float3>(vcount))
-                using (var src_uv0 = TempJobMemory<float2>(vcount))
-                {
-                    data.GetVertices(src_vtx.Reinterpret<Vector3>());
-                    data.GetUVs(0, src_uv0.Reinterpret<Vector2>());
-
-                    var out_vtx = TempJobMemory<Vertex>(icount);
-
-                    new ReconstructionJob {
-                        indices = src_idx,
-                        vertex = src_vtx,
-                        texcoord = src_uv0,
-                        output = out_vtx.Reinterpret<Triangle>(12 * 4)
-                    }.Schedule(icount / 3, 64).Complete();
-
-                    return out_vtx;
-                }
-            }
-        }
-
-        #endif
+        #endregion
     }
 }
