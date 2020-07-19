@@ -3,15 +3,16 @@ using UnityEngine.Rendering;
 using Unity.Collections;
 
 //
-// Remesher is a MonoBehaviour class for adding vertex modification effecs
-// using C# job system and the new Mesh accessing API. This is the only
-// effective way to modify vertices in the DXR pipeline because it's very
-// troublesome to write a custom vertex/geometry shader that works properly
-// with DXR.
+// Remesher is a class library for adding vertex modification effecs using C#
+// job system and the new Mesh accessing API. This is the only effective way to
+// modify vertices in the DXR pipeline because it's very troublesome to write a
+// custom vertex/geometry shader that works properly with DXR.
 //
 
+namespace Remesher {
+
 [ExecuteInEditMode, RequireComponent(typeof(MeshRenderer))]
-sealed partial class Remesher : MonoBehaviour
+sealed partial class Triangulation : MonoBehaviour
 {
     #region Editable attributes
 
@@ -41,7 +42,7 @@ sealed partial class Remesher : MonoBehaviour
 
         SetupMesh();
 
-        var args = new Arguments
+        var args = new ArrayBuilder.Arguments
           (_source.sharedMesh, _source.transform, _effector);
 
         using (var vertexArray = ArrayBuilder.CreateVertexArray(args))
@@ -116,4 +117,6 @@ sealed partial class Remesher : MonoBehaviour
     }
 
     #endregion
+}
+
 }
