@@ -15,11 +15,14 @@ sealed partial class Remesher
     struct Arguments
     {
         public Mesh Source;
+        public float4x4 Transform;
         public float4x4 Effector;
 
-        public Arguments(Mesh source, Transform effector)
+        public Arguments
+          (Mesh sourceMesh, Transform sourceTransform, Transform effector)
         {
-            Source = source;
+            Source = sourceMesh;
+            Transform = sourceTransform.localToWorldMatrix;
             Effector = effector.worldToLocalMatrix;
         }
     }
@@ -129,8 +132,8 @@ sealed partial class Remesher
 
                     // Invoke and wait the array generator job.
                     new VertexArrayJob
-                      { Idx = src_idx, Pos = src_pos,
-                        UV0 = src_uv0, Eff = args.Effector,
+                      { Idx = src_idx, Pos = src_pos, UV0 = src_uv0,
+                        Xfm = args.Transform, Eff = args.Effector,
                         Out = out_vtx.Reinterpret<Triangle>(12 * 4) }
                       .Schedule(icount / 3, 64).Complete();
 
@@ -146,6 +149,7 @@ sealed partial class Remesher
             [ReadOnly] public NativeArray<float3> Pos;
             [ReadOnly] public NativeArray<float2> UV0;
 
+            public float4x4 Xfm;
             public float4x4 Eff;
 
             [WriteOnly] public NativeArray<Triangle> Out;
@@ -158,9 +162,9 @@ sealed partial class Remesher
                 var i1 = (int)Idx[i * 3 + 1];
                 var i2 = (int)Idx[i * 3 + 2];
 
-                var p0 = Pos[i0];
-                var p1 = Pos[i1];
-                var p2 = Pos[i2];
+                var p0 = math.mul(Xfm, math.float4(Pos[i0], 1)).xyz;
+                var p1 = math.mul(Xfm, math.float4(Pos[i1], 1)).xyz;
+                var p2 = math.mul(Xfm, math.float4(Pos[i2], 1)).xyz;
 
                 var uv0 = UV0[i0];
                 var uv1 = UV0[i1];

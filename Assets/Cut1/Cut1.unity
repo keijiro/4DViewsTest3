@@ -803,6 +803,8 @@ PlayableDirector:
     value: {fileID: 603200379}
   - key: {fileID: -5649546683691109838, guid: 98f7a8feb50bd9049aecba77fdb54da1, type: 2}
     value: {fileID: 1743262029}
+  - key: {fileID: 5820327743791614607, guid: 98f7a8feb50bd9049aecba77fdb54da1, type: 2}
+    value: {fileID: 0}
   m_ExposedReferences:
     m_References:
     - 30e0813c1cc1f2dc3b4dce381fb67c67: {fileID: 0}
@@ -909,13 +911,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1193041493}
-  m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.01, y: 0.0015, z: 0.01}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 4
-  m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &1269303111 stripped
 MeshFilter:
   m_CorrespondingSourceObject: {fileID: 2766979385458890826, guid: d2a89134d9305b943abd08a8f20e78f8,

@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Collections;
-using Unity.Mathematics;
 
 //
 // Remesher is a MonoBehaviour class for adding vertex modification effecs
@@ -42,12 +41,28 @@ sealed partial class Remesher : MonoBehaviour
 
         SetupMesh();
 
-        var args = new Arguments(_source.sharedMesh, _effector);
+        var args = new Arguments
+          (_source.sharedMesh, _source.transform, _effector);
+
         using (var vertexArray = ArrayBuilder.CreateVertexArray(args))
         using (var indexArray = ArrayBuilder.CreateIndexArray(args))
           UpdateMesh(vertexArray, indexArray);
 
-        _mesh.bounds = args.Source.bounds;
+        _mesh.bounds = CalculateTransformedBounds
+          (_source.sharedMesh.bounds, _source.transform);
+    }
+
+    #endregion
+
+    #region Internal-use method
+
+    static Bounds CalculateTransformedBounds
+      (Bounds bounds, Transform transform)
+    {
+        var center = transform.TransformPoint(bounds.center);
+        var size = transform.TransformVector(bounds.size);
+        var maxs = Mathf.Max(Mathf.Max(size.x, size.y), size.z);
+        return new Bounds(center, Vector3.one * maxs);
     }
 
     #endregion
