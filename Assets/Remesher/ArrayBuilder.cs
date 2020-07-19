@@ -4,7 +4,9 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
-namespace Remesher {
+namespace Remesher { 
+
+partial class Triangulation {
 
 static class ArrayBuilder
 {
@@ -23,18 +25,6 @@ static class ArrayBuilder
         }
     }
 
-    #region NativeArray allocator
-
-    static NativeArray<T> TempMemory<T>(int length) where T : unmanaged
-        => new NativeArray<T>(length, Allocator.Temp,
-                              NativeArrayOptions.UninitializedMemory);
-
-    static NativeArray<T> TempJobMemory<T>(int length) where T : unmanaged
-        => new NativeArray<T>(length, Allocator.TempJob,
-                              NativeArrayOptions.UninitializedMemory);
-
-    #endregion
-
     #region Index array builder
 
     // Simply enumerates all the vertices.
@@ -42,7 +32,7 @@ static class ArrayBuilder
     public static NativeArray<uint> CreateIndexArray(Arguments args)
     {
         var count = (int)args.Source.GetIndexCount(0);
-        var array = TempJobMemory<uint>(count);
+        var array = MemoryUtil.TempJobArray<uint>(count);
         new IndexArrayJob { Output = array, Count = count }.Run();
         return array;
     }
@@ -81,15 +71,15 @@ static class ArrayBuilder
             var src_idx = data.GetIndexData<uint>();
 
             // Read buffer allocation
-            using (var src_pos = TempJobMemory<float3>(vcount))
-            using (var src_uv0 = TempJobMemory<float2>(vcount))
+            using (var src_pos = MemoryUtil.TempJobArray<float3>(vcount))
+            using (var src_uv0 = MemoryUtil.TempJobArray<float2>(vcount))
             {
                 // Retrieve vertex attribute arrays.
                 data.GetVertices(src_pos.Reinterpret<Vector3>());
                 data.GetUVs(0, src_uv0.Reinterpret<Vector2>());
 
                 // Output buffer
-                var out_vtx = TempJobMemory<Vertex>(icount);
+                var out_vtx = MemoryUtil.TempJobArray<Vertex>(icount);
 
                 // Invoke and wait the array generator job.
                 new VertexArrayJob
@@ -155,6 +145,8 @@ static class ArrayBuilder
     }
 
     #endregion
+}
+
 }
 
 }
