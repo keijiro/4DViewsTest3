@@ -6,46 +6,50 @@ using Unity.Mathematics;
 
 namespace Remesher { 
 
-partial class Disintegrator {
-
-struct Source
+static class DisintegrationEffect
 {
-    public float3 Position1; public float2 UV1;
-    public float3 Position2; public float2 UV2;
-    public float3 Position3; public float2 UV3;
-    public float3 Normal;
-    public float4 Tangent;
+    #region Data structure
 
-    public Source
-      (float3 position1, float2 uv1,
-       float3 position2, float2 uv2,
-       float3 position3, float2 uv3,
-       float3 normal, float4 tangent)
+    public struct Source
     {
-        Position1 = position1; UV1 = uv1;
-        Position2 = position2; UV2 = uv2;
-        Position3 = position3; UV3 = uv3;
-        Normal = normal;
-        Tangent = tangent;
+        public float3 Position1; public float2 UV1;
+        public float3 Position2; public float2 UV2;
+        public float3 Position3; public float2 UV3;
+        public float3 Normal;
+        public float4 Tangent;
+
+        public Source
+          (float3 position1, float2 uv1,
+           float3 position2, float2 uv2,
+           float3 position3, float2 uv3,
+           float3 normal, float4 tangent)
+        {
+            Position1 = position1; UV1 = uv1;
+            Position2 = position2; UV2 = uv2;
+            Position3 = position3; UV3 = uv3;
+            Normal = normal;
+            Tangent = tangent;
+        }
     }
-}
 
-struct Fragment
-{
-    public float3 Position;
-    public float3 Velocity;
-    public Source Source;
-
-    public Fragment(float3 position, float3 velocity, in Source source)
+    public struct Fragment
     {
-        Position = position;
-        Velocity = velocity;
-        Source = source;
-    }
-}
+        public float3 Position;
+        public float3 Velocity;
+        public Source Source;
 
-static class FragmentController
-{
+        public Fragment(float3 position, float3 velocity, in Source source)
+        {
+            Position = position;
+            Velocity = velocity;
+            Source = source;
+        }
+    }
+
+    #endregion
+
+    #region Fragment array initializer
+
     public static NativeArray<Fragment> Initialize
       (Mesh sourceMesh, Transform transform)
     {
@@ -119,37 +123,11 @@ static class FragmentController
         }
     }
 
-    #region Index array builder
-
-    // Simply enumerates all the vertices.
-
-    public static NativeArray<uint>
-      CreateIndexArray(NativeArray<Fragment> frags)
-    {
-        var count = frags.Length * 3;
-        var array = MemoryUtil.TempJobArray<uint>(count);
-        new IndexArrayJob { Output = array, Count = count }.Run();
-        return array;
-    }
-
-    [Unity.Burst.BurstCompile(CompileSynchronously = true)]
-    struct IndexArrayJob : IJob
-    {
-        [WriteOnly] public NativeArray<uint> Output;
-        public int Count;
-
-        public void Execute()
-        {
-            for (var i = 0; i < Count; i++) Output[i] = (uint)i;
-        }
-    }
-
     #endregion
 
     #region Vertex array builder
 
-    public static NativeArray<Vertex>
-      CreateVertexArray(NativeArray<Fragment> frags)
+    public static NativeArray<Vertex> Build(NativeArray<Fragment> frags)
     {
         // Triangle count
         var tcount = frags.Length;
@@ -157,8 +135,8 @@ static class FragmentController
         // Output buffer
         var out_vtx = MemoryUtil.TempJobArray<Vertex>(tcount * 3);
 
-        // Invoke and wait the array generator job.
-        new VertexArrayJob
+        // Invoke and wait for the builder job.
+        new BuildJob
           { Frags = frags, Output = out_vtx.Reinterpret<Triangle>(12 * 4) }
           .Schedule(tcount, 64).Complete();
 
@@ -166,7 +144,7 @@ static class FragmentController
     }
 
     [Unity.Burst.BurstCompile(CompileSynchronously = true)]
-    struct VertexArrayJob : IJobParallelFor
+    struct BuildJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<Fragment> Frags;
         [WriteOnly] public NativeArray<Triangle> Output;
@@ -183,8 +161,6 @@ static class FragmentController
     }
 
     #endregion
-}
-
 }
 
 }

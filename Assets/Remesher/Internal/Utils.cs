@@ -81,7 +81,7 @@ static class MeshUtil
         return mesh;
     }
 
-    public static void UpdateWithArrays
+    public static void UpdateWithVertexIndexArrays
       (Mesh mesh, NativeArray<Vertex> vertices, NativeArray<uint> indices)
     {
         mesh.Clear();
@@ -105,6 +105,13 @@ static class MeshUtil
         mesh.SetIndexBufferData(indices, 0, 0, vcount);
 
         mesh.SetSubMesh(0, new SubMeshDescriptor(0, vcount));
+    }
+
+    public static void UpdateWithVertexArray
+      (Mesh mesh, NativeArray<Vertex> vertices)
+    {
+        using (var indices = IndexArrayBuilder.SimpleArray(vertices.Length))
+          MeshUtil.UpdateWithVertexIndexArrays(mesh, vertices, indices);
     }
 }
 

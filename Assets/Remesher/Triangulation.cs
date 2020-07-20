@@ -1,5 +1,4 @@
 using UnityEngine;
-using Unity.Collections;
 
 namespace Remesher {
 
@@ -8,7 +7,7 @@ namespace Remesher {
 //
 
 [ExecuteInEditMode, RequireComponent(typeof(MeshRenderer))]
-sealed partial class Triangulation : MonoBehaviour
+public sealed class Triangulation : MonoBehaviour
 {
     #region Editable attributes
 
@@ -17,9 +16,13 @@ sealed partial class Triangulation : MonoBehaviour
 
     #endregion
 
-    #region MonoBehaviour implementation
+    #region Private objects
 
     Mesh _mesh;
+
+    #endregion
+
+    #region MonoBehaviour implementation
 
     void OnDestroy()
     {
@@ -34,12 +37,9 @@ sealed partial class Triangulation : MonoBehaviour
 
         if (_mesh == null) _mesh = MeshUtil.SetupWithMeshFilter(gameObject);
 
-        var args = new ArrayBuilder.Arguments
-          (_source.sharedMesh, _source.transform, _effector);
-
-        using (var vertices = ArrayBuilder.CreateVertexArray(args))
-        using (var indices = ArrayBuilder.CreateIndexArray(args))
-          MeshUtil.UpdateWithArrays(_mesh, vertices, indices);
+        using (var vertices = TriangulationEffect.Build
+                (_source.sharedMesh, _source.transform, _effector))
+          MeshUtil.UpdateWithVertexArray(_mesh, vertices);
 
         _mesh.bounds = GeomUtil.TransformBounds
           (_source.sharedMesh.bounds, _source.transform);

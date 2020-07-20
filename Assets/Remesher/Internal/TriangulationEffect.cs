@@ -6,59 +6,12 @@ using Unity.Mathematics;
 
 namespace Remesher { 
 
-partial class Triangulation {
-
-static class ArrayBuilder
+static class TriangulationEffect
 {
-    public struct Arguments
+    public static NativeArray<Vertex>
+      Build(Mesh source, Transform transform, Transform effector)
     {
-        public Mesh Source;
-        public float4x4 Transform;
-        public float4x4 Effector;
-
-        public Arguments
-          (Mesh sourceMesh, Transform sourceTransform, Transform effector)
-        {
-            Source = sourceMesh;
-            Transform = sourceTransform.localToWorldMatrix;
-            Effector = effector.worldToLocalMatrix;
-        }
-    }
-
-    #region Index array builder
-
-    // Simply enumerates all the vertices.
-
-    public static NativeArray<uint> CreateIndexArray(Arguments args)
-    {
-        var count = (int)args.Source.GetIndexCount(0);
-        var array = MemoryUtil.TempJobArray<uint>(count);
-        new IndexArrayJob { Output = array, Count = count }.Run();
-        return array;
-    }
-
-    [Unity.Burst.BurstCompile(CompileSynchronously = true)]
-    struct IndexArrayJob : IJob
-    {
-        [WriteOnly] public NativeArray<uint> Output;
-        public int Count;
-
-        public void Execute()
-        {
-            for (var i = 0; i < Count; i++) Output[i] = (uint)i;
-        }
-    }
-
-    #endregion
-
-    #region Vertex array builder
-
-    // Retrieve the original vertices using the new mesh API.
-    // Then reconstruct a mesh using a Parallel-For job.
-
-    public static NativeArray<Vertex> CreateVertexArray(Arguments args)
-    {
-        using (var dataArray = Mesh.AcquireReadOnlyMeshData(args.Source))
+        using (var dataArray = Mesh.AcquireReadOnlyMeshData(source))
         {
             var data = dataArray[0];
 
@@ -84,7 +37,8 @@ static class ArrayBuilder
                 // Invoke and wait the array generator job.
                 new VertexArrayJob
                   { Idx = src_idx, Pos = src_pos, UV0 = src_uv0,
-                    Xfm = args.Transform, Eff = args.Effector,
+                    Xfm = transform.localToWorldMatrix,
+                    Eff = effector.worldToLocalMatrix,
                     Out = out_vtx.Reinterpret<Triangle>(12 * 4) }
                   .Schedule(icount / 3, 64).Complete();
 
@@ -143,10 +97,6 @@ static class ArrayBuilder
                                   new Vertex(p2, nrm, tan, uv2));
         }
     }
-
-    #endregion
-}
-
 }
 
 }
