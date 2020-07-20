@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.Playables;
+using UnityEngine.Timeline;
 using Unity.Collections;
 
 namespace Remesher {
@@ -8,7 +10,8 @@ namespace Remesher {
 //
 
 [ExecuteInEditMode, RequireComponent(typeof(MeshRenderer))]
-public sealed class Disintegration : MonoBehaviour
+public sealed class Disintegration :
+  MonoBehaviour, ITimeControl, IPropertyPreview
 {
     #region Editable attributes
 
@@ -19,13 +22,7 @@ public sealed class Disintegration : MonoBehaviour
 
     #region Public method
 
-    public void Kick()
-    {
-        if (_fragments.IsCreated) _fragments.Dispose();
-
-        _fragments = DisintegrationEffect.Initialize
-          (_source.sharedMesh, _source.transform);
-    }
+    public void Kick() { }
 
     #endregion
 
@@ -33,6 +30,23 @@ public sealed class Disintegration : MonoBehaviour
 
     NativeArray<DisintegrationEffect.Fragment> _fragments;
     Mesh _mesh;
+    float _time;
+    float _last;
+
+    #endregion
+
+    #region ITimeControl implementation
+
+    public void OnControlTimeStart() => _time = 0;
+    public void OnControlTimeStop() => _time = -1;
+    public void SetTime(double time) => _time = (float)time;
+
+    #endregion
+
+    #region IPropertyPreview implementation
+
+    public void GatherProperties
+      (PlayableDirector director, IPropertyCollector driver) {}
 
     #endregion
 
@@ -51,7 +65,21 @@ public sealed class Disintegration : MonoBehaviour
 
     void LateUpdate()
     {
-        if (!_fragments.IsCreated) return;
+        if (_time < 0)
+        {
+            // Negative time: The module is to be disabled.
+            OnDisable();
+            OnDestroy();
+            return;
+        }
+
+        // Lazy initialization
+        if (!_fragments.IsCreated)
+        {
+            _fragments = DisintegrationEffect.Initialize
+              (_source.sharedMesh, _source.transform);
+            _last = 0;
+        }
 
         if (_mesh == null)
         {
@@ -59,6 +87,13 @@ public sealed class Disintegration : MonoBehaviour
             _mesh.bounds = new Bounds(Vector3.zero, Vector3.one * 10);
         }
 
+        // Time update
+        // (We don't support rewinding at the moment.)
+        if (_time > _last)
+            DisintegrationEffect.Update(_fragments, _time - _last);
+        _last = _time;
+
+        // Mesh reconstruction
         using (var vertices = DisintegrationEffect.Build(_fragments))
           MeshUtil.UpdateWithVertexArray(_mesh, vertices);
     }

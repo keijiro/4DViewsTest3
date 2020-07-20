@@ -125,6 +125,32 @@ static class DisintegrationEffect
 
     #endregion
 
+    #region Fragment array updater
+
+    public static void Update(NativeArray<Fragment> frags, float delta)
+    {
+        new UpdateJob { Frags = frags, Dt = delta }.
+          Schedule(frags.Length, 64).Complete();
+    }
+
+    [Unity.Burst.BurstCompile(CompileSynchronously = true)]
+    struct UpdateJob : IJobParallelFor
+    {
+        public NativeArray<Fragment> Frags;
+        public float Dt;
+
+        public void Execute(int i)
+        {
+            Fragment frag = Frags[i];
+
+            frag.Source.Position1 += math.float3(0, Dt, 0);
+
+            Frags[i] = frag;
+        }
+    }
+
+    #endregion
+
     #region Vertex array builder
 
     public static NativeArray<Vertex> Build(NativeArray<Fragment> frags)
