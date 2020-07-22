@@ -90,7 +90,7 @@ public sealed class Disintegration :
         // Time update
         // (We don't support rewinding at the moment.)
         if (_time > _last)
-            DisintegrationEffect.Update(_fragments, _time - _last);
+            DisintegrationEffect.Update(_fragments, _effector, _time - _last);
         _last = _time;
 
         // Mesh reconstruction
