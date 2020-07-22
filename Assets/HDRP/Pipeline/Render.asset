@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0cf1dab834d4ec34195b920ea7bbf9ec, type: 3}
-  m_Name: HDRenderPipelineAsset
+  m_Name: Render
   m_EditorClassIdentifier: 
   m_Version: 14
   m_ObsoleteFrameSettings:
@@ -210,13 +210,13 @@ MonoBehaviour:
     supportTransparentBackface: 1
     supportTransparentDepthPrepass: 1
     supportTransparentDepthPostpass: 1
-    colorBufferFormat: 74
-    supportCustomPass: 1
+    colorBufferFormat: 48
+    supportCustomPass: 0
     customBufferFormat: 12
     supportedLitShaderMode: 2
-    supportDecals: 1
+    supportDecals: 0
     msaaSampleCount: 1
-    supportMotionVectors: 1
+    supportMotionVectors: 0
     supportRuntimeDebugDisplay: 1
     supportDitheringCrossFade: 1
     supportTerrainHole: 0
@@ -282,7 +282,7 @@ MonoBehaviour:
     postProcessSettings:
       m_LutSize: 32
       lutFormat: 48
-      bufferFormat: 74
+      bufferFormat: 48
     dynamicResolutionSettings:
       enabled: 0
       maxPercentage: 100
@@ -296,8 +296,8 @@ MonoBehaviour:
       checkerboardDepthBuffer: 1
       upsampleType: 1
     xrSettings:
-      singlePass: 1
-      occlusionMesh: 1
+      singlePass: 0
+      occlusionMesh: 0
       cameraJitter: 0
     postProcessQualitySettings:
       NearBlurSampleCount: 030000000500000008000000
@@ -350,7 +350,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: d0d3142dd60c2caa9a082bd402522f23, type: 2}
   - {fileID: 11400000, guid: 47199454995f2d7628d8d664cc707940, type: 2}
   beforeTransparentCustomPostProcesses: []
-  beforePostProcessCustomPostProcesses:
-  - Kino.PostProcessing.Streak, Kino.Postprocessing, Version=0.0.0.0, Culture=neutral,
-    PublicKeyToken=null
-  afterPostProcessCustomPostProcesses: []
+  beforePostProcessCustomPostProcesses: []
+  afterPostProcessCustomPostProcesses:
+  - Kino.PostProcessing.LinearToSLog3, Kino.Postprocessing.SLog3, Version=0.0.0.0,
+    Culture=neutral, PublicKeyToken=null

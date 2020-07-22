@@ -12,21 +12,21 @@ static class DisintegrationEffect
 
     public struct Source
     {
-        public float3 Position1; public float2 UV1;
-        public float3 Position2; public float2 UV2;
-        public float3 Position3; public float2 UV3;
+        public float3 Vertex1; public float2 UV1;
+        public float3 Vertex2; public float2 UV2;
+        public float3 Vertex3; public float2 UV3;
         public float3 Normal;
         public float4 Tangent;
 
         public Source
-          (float3 position1, float2 uv1,
-           float3 position2, float2 uv2,
-           float3 position3, float2 uv3,
+          (float3 vertex1, float2 uv1,
+           float3 vertex2, float2 uv2,
+           float3 vertex3, float2 uv3,
            float3 normal, float4 tangent)
         {
-            Position1 = position1; UV1 = uv1;
-            Position2 = position2; UV2 = uv2;
-            Position3 = position3; UV3 = uv3;
+            Vertex1 = vertex1; UV1 = uv1;
+            Vertex2 = vertex2; UV2 = uv2;
+            Vertex3 = vertex3; UV3 = uv3;
             Normal = normal;
             Tangent = tangent;
         }
@@ -36,12 +36,14 @@ static class DisintegrationEffect
     {
         public float3 Position;
         public float3 Velocity;
+        public float Morph;
         public Source Source;
 
         public Fragment(float3 position, float3 velocity, in Source source)
         {
             Position = position;
             Velocity = velocity;
+            Morph = 0;
             Source = source;
         }
     }
@@ -104,21 +106,24 @@ static class DisintegrationEffect
             var i2 = (int)Idx[i * 3 + 1];
             var i3 = (int)Idx[i * 3 + 2];
 
-            var p1 = math.mul(Xfm, math.float4(Pos[i1], 1)).xyz;
-            var p2 = math.mul(Xfm, math.float4(Pos[i2], 1)).xyz;
-            var p3 = math.mul(Xfm, math.float4(Pos[i3], 1)).xyz;
+            var v1 = math.mul(Xfm, math.float4(Pos[i1], 1)).xyz;
+            var v2 = math.mul(Xfm, math.float4(Pos[i2], 1)).xyz;
+            var v3 = math.mul(Xfm, math.float4(Pos[i3], 1)).xyz;
 
             var uv1 = UV0[i1];
             var uv2 = UV0[i2];
             var uv3 = UV0[i3];
 
-            var pc = (p1 + p2 + p3) / 3;
-
-            var nrm = math.normalize(math.cross(p2 - p1, p3 - p1));
+            var nrm = math.normalize(math.cross(v2 - v1, v3 - v1));
             var tan = math.float4(math.normalize(
               math.cross(nrm, math.float3(0, 1, 0))), 1);
 
-            var src = new Source(p1, uv1, p2, uv2, p3, uv3, nrm, tan);
+            var pc = (v1 + v2 + v3) / 3;
+            v1 -= pc;
+            v2 -= pc;
+            v3 -= pc;
+
+            var src = new Source(v1, uv1, v2, uv2, v3, uv3, nrm, tan);
             Out[i] = new Fragment(pc, float3.zero, src);
         }
     }
@@ -143,7 +148,19 @@ static class DisintegrationEffect
         {
             Fragment frag = Frags[i];
 
-            frag.Source.Position1 += math.float3(0, Dt, 0);
+            frag.Position += frag.Velocity * Dt;
+            frag.Morph += Dt;
+
+            var np1 = frag.Position * 2.3f;
+            var np2 = frag.Position.zxy * -2.3f;
+
+            float3 n1, n2;
+            noise.snoise(np1, out n1);
+            noise.snoise(np2, out n2);
+
+            frag.Velocity += math.cross(n1, n2) * Dt * 0.1f;
+            frag.Velocity.y += 0.2f * Dt;
+            frag.Velocity -= frag.Velocity * Dt;
 
             Frags[i] = frag;
         }
@@ -177,12 +194,20 @@ static class DisintegrationEffect
 
         public void Execute(int i)
         {
+            var frag = Frags[i];
             var src = Frags[i].Source;
 
+            var param = 1 + math.saturate(frag.Morph);
+
+            var p = frag.Position;
+            var v1 = p + src.Vertex1 * param;
+            var v2 = p + src.Vertex2 * param;
+            var v3 = p + src.Vertex3 * param;
+
             Output[i] = new Triangle
-              (new Vertex(src.Position1, src.Normal, src.Tangent, src.UV1),
-               new Vertex(src.Position2, src.Normal, src.Tangent, src.UV2),
-               new Vertex(src.Position3, src.Normal, src.Tangent, src.UV3));
+              (new Vertex(v1, src.Normal, src.Tangent, src.UV1),
+               new Vertex(v2, src.Normal, src.Tangent, src.UV2),
+               new Vertex(v3, src.Normal, src.Tangent, src.UV3));
         }
     }
 

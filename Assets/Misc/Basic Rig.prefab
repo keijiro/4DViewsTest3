@@ -396,9 +396,9 @@ MonoBehaviour:
   stopNaNs: 0
   taaSharpenStrength: 0.6
   physicalParameters:
-    m_Iso: 2000
+    m_Iso: 4000
     m_ShutterSpeed: 0.033333335
-    m_Aperture: 2.8
+    m_Aperture: 1
     m_BladeCount: 5
     m_Curvature: {x: 2, y: 11}
     m_BarrelClipping: 0.25
