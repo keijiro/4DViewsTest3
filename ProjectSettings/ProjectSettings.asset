@@ -590,7 +590,7 @@ PlayerSettings:
   webGLThreadsSupport: 0
   webGLDecompressionFallback: 0
   scriptingDefineSymbols:
-    1: HAP_NO_DELAY
+    1: HAP_NO_DELAY;ENABLE_RAYTRACING
   platformArchitecture: {}
   scriptingBackend: {}
   il2cppCompilerConfiguration: {}

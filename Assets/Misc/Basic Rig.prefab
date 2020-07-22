@@ -42,7 +42,7 @@ GameObject:
   - component: {fileID: 198575977002355909}
   - component: {fileID: 6312652916813533781}
   m_Layer: 0
-  m_Name: Ray Tracing
+  m_Name: Edit Profile
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -327,7 +327,7 @@ GameObject:
   - component: {fileID: 8294575505136314357}
   - component: {fileID: 5358302800445624816}
   m_Layer: 0
-  m_Name: Render Output
+  m_Name: Render Profile
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -360,7 +360,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isGlobal: 1
-  priority: 0
+  priority: 1
   blendDistance: 0
   weight: 1
   sharedProfile: {fileID: 11400000, guid: 66a7fc009427333409d5dfd765dfc823, type: 2}
@@ -718,7 +718,7 @@ MonoBehaviour:
       enableBigTilePrepass: 0
       isFptlEnabled: 0
   clearColorMode: 1
-  backgroundColorHDR: {r: 0, g: 0, b: 0, a: 0}
+  backgroundColorHDR: {r: 0, g: 0, b: 0, a: 1}
   clearDepth: 1
   volumeLayerMask:
     serializedVersion: 2
