@@ -40,7 +40,7 @@ static class TriangulationEffect
                   { Idx = src_idx, Pos = src_pos, UV0 = src_uv0,
                     Xfm = transform.localToWorldMatrix,
                     Eff = effector.worldToLocalMatrix,
-                    Out = out_vtx.Reinterpret<Triangle>(12 * 4) }
+                    Out = out_vtx.Reinterpret<Triangle>(Vertex.StructSize) }
                   .Schedule(icount / 3, 64).Complete();
 
                 return out_vtx;
@@ -65,38 +65,55 @@ static class TriangulationEffect
         {
             var hash = new Klak.Math.XXHash((uint)i);
 
-            var i0 = (int)Idx[i * 3 + 0];
-            var i1 = (int)Idx[i * 3 + 1];
-            var i2 = (int)Idx[i * 3 + 2];
+            // Indices
+            var i1 = (int)Idx[i * 3 + 0];
+            var i2 = (int)Idx[i * 3 + 1];
+            var i3 = (int)Idx[i * 3 + 2];
 
-            var p0 = math.mul(Xfm, math.float4(Pos[i0], 1)).xyz;
+            // Vertex positions with transformation
             var p1 = math.mul(Xfm, math.float4(Pos[i1], 1)).xyz;
             var p2 = math.mul(Xfm, math.float4(Pos[i2], 1)).xyz;
+            var p3 = math.mul(Xfm, math.float4(Pos[i3], 1)).xyz;
 
-            var uv0 = UV0[i0];
-            var uv1 = UV0[i1];
-            var uv2 = UV0[i2];
+            // Triangle centroid
+            var pc = (p1 + p2 + p3) / 3;
 
-            var nrm = math.normalize(math.cross(p1 - p0, p2 - p0));
-            var tan = math.float4(math.normalize(
-              math.cross(nrm, math.float3(0, 1, 0))), 1);
+            // Effect select
+            var sel = hash.Float(8394) < 0.1f;
 
-            var pc = (p0 + p1 + p2) / 3;
+            // Effect parameter
+            var eff = math.mul(Eff, math.float4(pc, 1)).z;
+            eff = math.saturate(eff + hash.Float(0, 0.1f, 2058));
 
-            var mod = math.saturate(math.mul(Eff, math.float4(pc, 1)).z);
+            // Deformation parameter
+            var mod = (1 - math.cos(eff * math.PI * 4)) / 2;
 
-            var sel = hash.Float(0) < 0.1f;
+            // Triangle scaling
+            if (sel)
+            {
+                var scale = math.pow(hash.Float(84792), 8);
+                scale = 1 + mod * math.lerp(5, 25, scale);
+                p1 = math.lerp(pc, p1, scale);
+                p2 = math.lerp(pc, p2, scale);
+                p3 = math.lerp(pc, p3, scale);
+            }
 
-            mod = (sel ?
-             (math.smoothstep(0, 0.5f, mod) - math.smoothstep(0.5f, 1, mod)) * 20 : 0) + 1 - mod;
+            // Normal/Tangent
+            var up = math.float3(0, 1, 0);
+            var nrm = MathUtil.UnitOrtho(p2 - p1, p3 - p1);
+            var tan = math.float4(MathUtil.UnitOrtho(nrm, up), 1);
 
-            p0 = math.lerp(pc, p0, mod);
-            p1 = math.lerp(pc, p1, mod);
-            p2 = math.lerp(pc, p2, mod);
+            // UV coordinates
+            var mat = (eff > 0.25f && eff < 0.75f) ? 1.0f : 0.0f;
+            var emm = (sel ? math.pow(mod, 20) * 2 : 0) - mat;
+            var uv1 = math.float4(UV0[i1], mat, emm);
+            var uv2 = math.float4(UV0[i2], uv1.zw);
+            var uv3 = math.float4(UV0[i3], uv1.zw);
 
-            Out[i] = new Triangle(new Vertex(p0, nrm, tan, uv0),
-                                  new Vertex(p1, nrm, tan, uv1),
-                                  new Vertex(p2, nrm, tan, uv2));
+            // Output
+            Out[i] = new Triangle(new Vertex(p1, nrm, tan, uv1),
+                                  new Vertex(p2, nrm, tan, uv2),
+                                  new Vertex(p3, nrm, tan, uv3));
         }
     }
 }

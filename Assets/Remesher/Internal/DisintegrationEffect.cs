@@ -118,28 +118,34 @@ static class DisintegrationEffect
 
         public void Execute(int i)
         {
+            // Indices
             var i1 = (int)Idx[i * 3 + 0];
             var i2 = (int)Idx[i * 3 + 1];
             var i3 = (int)Idx[i * 3 + 2];
 
-            var v1 = math.mul(Xfm, math.float4(Pos[i1], 1)).xyz;
-            var v2 = math.mul(Xfm, math.float4(Pos[i2], 1)).xyz;
-            var v3 = math.mul(Xfm, math.float4(Pos[i3], 1)).xyz;
+            // Vertex positions with transformation
+            var p1 = math.mul(Xfm, math.float4(Pos[i1], 1)).xyz;
+            var p2 = math.mul(Xfm, math.float4(Pos[i2], 1)).xyz;
+            var p3 = math.mul(Xfm, math.float4(Pos[i3], 1)).xyz;
 
+            // UV coordinates
             var uv1 = UV0[i1];
             var uv2 = UV0[i2];
             var uv3 = UV0[i3];
 
-            var nrm = math.normalize(math.cross(v2 - v1, v3 - v1));
-            var tan = math.float4(math.normalize(
-              math.cross(nrm, math.float3(0, 1, 0))), 1);
+            // Normal/Tangent
+            var up = math.float3(0, 1, 0);
+            var nrm = MathUtil.UnitOrtho(p2 - p1, p3 - p1);
+            var tan = math.float4(MathUtil.UnitOrtho(nrm, up), 1);
 
-            var pc = (v1 + v2 + v3) / 3;
-            v1 -= pc;
-            v2 -= pc;
-            v3 -= pc;
+            // Store relative positions from the triangle centroid.
+            var pc = (p1 + p2 + p3) / 3;
+            p1 -= pc;
+            p2 -= pc;
+            p3 -= pc;
 
-            var src = new Source(v1, uv1, v2, uv2, v3, uv3, nrm, tan);
+            // Output
+            var src = new Source(p1, uv1, p2, uv2, p3, uv3, nrm, tan);
             Out[i] = new Fragment(pc, float3.zero, src);
         }
     }
@@ -218,7 +224,8 @@ static class DisintegrationEffect
 
         // Invoke and wait for the builder job.
         new BuildJob
-          { Frags = frags, Output = out_vtx.Reinterpret<TrianglePair>(12 * 4) }
+          { Frags = frags,
+            Output = out_vtx.Reinterpret<TrianglePair>(Vertex.StructSize) }
           .Schedule(tcount, 64).Complete();
 
         return out_vtx;
@@ -230,9 +237,6 @@ static class DisintegrationEffect
     {
         [ReadOnly] public NativeArray<Fragment> Frags;
         [WriteOnly] public NativeArray<TrianglePair> Output;
-
-        static float3 UnitOrthogonal(float3 a, float3 b)
-          => math.normalizesafe(math.cross(a, b));
 
         public void Execute(int i)
         {
@@ -247,7 +251,7 @@ static class DisintegrationEffect
             var fwd = math.normalizesafe(frag.Velocity);
 
             // Right/Left hand vector
-            var rhv = UnitOrthogonal(math.float3(0, 1, 0), fwd);
+            var rhv = MathUtil.UnitOrtho(math.float3(0, 1, 0), fwd);
             var lhv = -rhv;
 
             // Flapping frequency
@@ -292,17 +296,23 @@ static class DisintegrationEffect
             v6 = math.lerp(vs3, v6, morph);
 
             // Normal vectors
-            var n1 = UnitOrthogonal(v2 - v1, v3 - v1);
-            var n2 = UnitOrthogonal(v5 - v4, v6 - v4);
+            var n1 = MathUtil.UnitOrtho(v2 - v1, v3 - v1);
+            var n2 = MathUtil.UnitOrtho(v5 - v4, v6 - v4);
+
+            // Other attributs
+            var tan = src.Tangent;
+            var uv1 = math.float4(src.UV1, morph, 0);
+            var uv2 = math.float4(src.UV2, morph, 0);
+            var uv3 = math.float4(src.UV3, morph, 0);
 
             // Output
             Output[i] = new TrianglePair
-              (new Vertex(v1, n1, src.Tangent, src.UV1),
-               new Vertex(v2, n1, src.Tangent, src.UV2),
-               new Vertex(v3, n1, src.Tangent, src.UV3),
-               new Vertex(v4, n2, src.Tangent, src.UV1),
-               new Vertex(v5, n2, src.Tangent, src.UV2),
-               new Vertex(v6, n2, src.Tangent, src.UV3));
+              (new Vertex(v1, n1, tan, uv1),
+               new Vertex(v2, n1, tan, uv2),
+               new Vertex(v3, n1, tan, uv3),
+               new Vertex(v4, n2, tan, uv1),
+               new Vertex(v5, n2, tan, uv2),
+               new Vertex(v6, n2, tan, uv3));
         }
     }
 

@@ -1,12 +1,23 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Collections;
+using Unity.Mathematics;
 
 namespace Remesher {
 
 //
 // Common-use utility classes
 //
+
+#region Math utilities
+
+static class MathUtil
+{
+    public static float3 UnitOrtho(float3 a, float3 b)
+      => math.normalizesafe(math.cross(a, b));
+}
+
+#endregion
 
 #region UnityEngine.Object management utilities
 
@@ -97,7 +108,7 @@ static class MeshUtil
           new VertexAttributeDescriptor
             (VertexAttribute.Tangent   , VertexAttributeFormat.Float32, 4),
           new VertexAttributeDescriptor
-            (VertexAttribute.TexCoord0 , VertexAttributeFormat.Float32, 2)
+            (VertexAttribute.TexCoord0 , VertexAttributeFormat.Float32, 4)
         );
         mesh.SetVertexBufferData(vertices, 0, 0, vcount);
 
