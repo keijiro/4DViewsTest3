@@ -108,7 +108,9 @@ static class MeshUtil
           new VertexAttributeDescriptor
             (VertexAttribute.Tangent   , VertexAttributeFormat.Float32, 4),
           new VertexAttributeDescriptor
-            (VertexAttribute.TexCoord0 , VertexAttributeFormat.Float32, 4)
+            (VertexAttribute.TexCoord0 , VertexAttributeFormat.Float32, 2),
+          new VertexAttributeDescriptor
+            (VertexAttribute.TexCoord1 , VertexAttributeFormat.Float32, 2)
         );
         mesh.SetVertexBufferData(vertices, 0, 0, vcount);
 

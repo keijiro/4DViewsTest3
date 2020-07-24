@@ -10,7 +10,7 @@
   ],
   "dependencies": {
     "com.unity.formats.alembic": "2.0.1-preview.1",
-    "com.unity.render-pipelines.high-definition": "8.1.0",
+    "com.unity.render-pipelines.high-definition": "8.2.0",
     "com.unity.render-pipelines.high-definition-config": "file:../LocalPackages/com.unity.render-pipelines.high-definition-config",
     "jp.keijiro.abcvfx": "0.0.4",
     "jp.keijiro.kino.post-processing": "2.1.15",
