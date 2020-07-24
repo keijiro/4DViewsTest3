@@ -17,20 +17,14 @@ static class DisintegrationEffect
         public float3 Vertex1; public float2 UV1;
         public float3 Vertex2; public float2 UV2;
         public float3 Vertex3; public float2 UV3;
-        public float3 Normal;
-        public float4 Tangent;
 
-        public Source
-          (float3 vertex1, float2 uv1,
-           float3 vertex2, float2 uv2,
-           float3 vertex3, float2 uv3,
-           float3 normal, float4 tangent)
+        public Source(float3 vertex1, float2 uv1,
+                      float3 vertex2, float2 uv2,
+                      float3 vertex3, float2 uv3)
         {
             Vertex1 = vertex1; UV1 = uv1;
             Vertex2 = vertex2; UV2 = uv2;
             Vertex3 = vertex3; UV3 = uv3;
-            Normal = normal;
-            Tangent = tangent;
         }
     }
 
@@ -133,11 +127,6 @@ static class DisintegrationEffect
             var uv2 = UV0[i2];
             var uv3 = UV0[i3];
 
-            // Normal/Tangent
-            var up = math.float3(0, 1, 0);
-            var nrm = MathUtil.UnitOrtho(p2 - p1, p3 - p1);
-            var tan = math.float4(MathUtil.UnitOrtho(nrm, up), 1);
-
             // Store relative positions from the triangle centroid.
             var pc = (p1 + p2 + p3) / 3;
             p1 -= pc;
@@ -145,7 +134,7 @@ static class DisintegrationEffect
             p3 -= pc;
 
             // Output
-            var src = new Source(p1, uv1, p2, uv2, p3, uv3, nrm, tan);
+            var src = new Source(p1, uv1, p2, uv2, p3, uv3);
             Out[i] = new Fragment(pc, float3.zero, src);
         }
     }
@@ -295,24 +284,25 @@ static class DisintegrationEffect
             v5 = math.lerp(vs2, v5, morph);
             v6 = math.lerp(vs3, v6, morph);
 
-            // Normal vectors
-            var n1 = MathUtil.UnitOrtho(v2 - v1, v3 - v1);
-            var n2 = MathUtil.UnitOrtho(v5 - v4, v6 - v4);
+            // Normal/Tangent vectors
+            var nrm1 = MathUtil.UnitOrtho(v2 - v1, v3 - v1);
+            var nrm2 = MathUtil.UnitOrtho(v5 - v4, v6 - v4);
+            var tan1 = MathUtil.AdHocTangent(nrm1);
+            var tan2 = MathUtil.AdHocTangent(nrm2);
 
-            // Other attributs
-            var tan = src.Tangent;
+            // Texture coordinates
             var uv1 = math.float4(src.UV1, morph, 0);
             var uv2 = math.float4(src.UV2, morph, 0);
             var uv3 = math.float4(src.UV3, morph, 0);
 
             // Output
             Output[i] = new TrianglePair
-              (new Vertex(v1, n1, tan, uv1),
-               new Vertex(v2, n1, tan, uv2),
-               new Vertex(v3, n1, tan, uv3),
-               new Vertex(v4, n2, tan, uv1),
-               new Vertex(v5, n2, tan, uv2),
-               new Vertex(v6, n2, tan, uv3));
+              (new Vertex(v1, nrm1, tan1, uv1),
+               new Vertex(v2, nrm1, tan1, uv2),
+               new Vertex(v3, nrm1, tan1, uv3),
+               new Vertex(v4, nrm2, tan2, uv1),
+               new Vertex(v5, nrm2, tan2, uv2),
+               new Vertex(v6, nrm2, tan2, uv3));
         }
     }
 

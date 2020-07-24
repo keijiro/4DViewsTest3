@@ -99,9 +99,8 @@ static class TriangulationEffect
             }
 
             // Normal/Tangent
-            var up = math.float3(0, 1, 0);
             var nrm = MathUtil.UnitOrtho(p2 - p1, p3 - p1);
-            var tan = math.float4(MathUtil.UnitOrtho(nrm, up), 1);
+            var tan = MathUtil.AdHocTangent(nrm);
 
             // UV coordinates
             var mat = (eff > 0.25f && eff < 0.75f) ? 1.0f : 0.0f;

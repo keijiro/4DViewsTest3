@@ -20,12 +20,6 @@ public sealed class Disintegration :
 
     #endregion
 
-    #region Public method
-
-    public void Kick() { }
-
-    #endregion
-
     #region Private objects
 
     NativeArray<DisintegrationEffect.Fragment> _fragments;
