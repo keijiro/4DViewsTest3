@@ -35,26 +35,42 @@ static class VoxelizationEffect
         public Triangle Face6a, Face6b;
 
         public VoxelOutput
-          (in Vertex v1, in Vertex v2, in Vertex v3, in Vertex v4,
-           in Vertex v5, in Vertex v6, in Vertex v7, in Vertex v8)
+          (float3 v1, float4 uv1, float3 v2, float4 uv2,
+           float3 v3, float4 uv3, float3 v4, float4 uv4,
+           float3 v5, float4 uv5, float3 v6, float4 uv6,
+           float3 v7, float4 uv7, float3 v8, float4 uv8)
         {
-            Face1a = new Triangle(v1, v2, v3);
-            Face1b = new Triangle(v1, v2, v3);
+            var uv = math.float4(0, 0, 1, 0);
 
-            Face2a = new Triangle(v1, v2, v3);
-            Face2b = new Triangle(v1, v2, v3);
+            ConstructFace(v2, uv2, v1, uv1, v4, uv4, out Face1a);
+            ConstructFace(v1, uv1, v3, uv3, v4, uv4, out Face1b);
 
-            Face3a = new Triangle(v1, v2, v3);
-            Face3b = new Triangle(v1, v2, v3);
+            ConstructFace(v5, uv5, v6, uv6, v7, uv7, out Face2a);
+            ConstructFace(v6, uv6, v8, uv8, v7, uv7, out Face2b);
 
-            Face4a = new Triangle(v1, v2, v3);
-            Face4b = new Triangle(v1, v2, v3);
+            ConstructFace(v1, uv1, v5, uv5, v7, uv7, out Face3a);
+            ConstructFace(v1, uv1, v7, uv7, v3, uv3, out Face3b);
 
-            Face5a = new Triangle(v1, v2, v3);
-            Face5b = new Triangle(v1, v2, v3);
+            ConstructFace(v6, uv6, v2, uv2, v4, uv4, out Face4a);
+            ConstructFace(v6, uv6, v4, uv4, v8, uv8, out Face4b);
 
-            Face6a = new Triangle(v1, v2, v3);
-            Face6b = new Triangle(v1, v2, v3);
+            ConstructFace(v1, uv1, v2, uv2, v5, uv5, out Face5a);
+            ConstructFace(v2, uv2, v6, uv6, v5, uv5, out Face5b);
+
+            ConstructFace(v7, uv7, v8, uv8, v3, uv3, out Face6a);
+            ConstructFace(v8, uv8, v4, uv4, v3, uv3, out Face6b);
+        }
+
+        static void ConstructFace(float3 v1, float4 uv1,
+                                  float3 v2, float4 uv2,
+                                  float3 v3, float4 uv3,
+                                  out Triangle tri)
+        {
+            var nrm = MathUtil.UnitOrtho(v2 - v1, v3 - v1);
+            var tan = MathUtil.AdHocTangent(nrm);
+            tri = new Triangle(new Vertex(v1, nrm, tan, uv1),
+                               new Vertex(v2, nrm, tan, uv2),
+                               new Vertex(v3, nrm, tan, uv3));
         }
     }
 
@@ -62,7 +78,7 @@ static class VoxelizationEffect
 
     #region Element array initializer
 
-    const int SourcePerVoxel = 10;
+    const int SourcePerVoxel = 20;
 
     public static (NativeArray<Element> voxels, NativeArray<Element> fragments)
       Initialize(Mesh sourceMesh, Transform transform)
@@ -77,7 +93,7 @@ static class VoxelizationEffect
 
             // Source/voxel/fragment count
             var srcCount = idxCount / 3;
-            var vxlCount = srcCount / SourcePerVoxel;
+            var vxlCount = (srcCount + SourcePerVoxel - 1) / SourcePerVoxel;
             var frgCount = srcCount - vxlCount;
 
             // Source index array
@@ -203,23 +219,69 @@ static class VoxelizationEffect
         public void Execute(int i)
         {
             var e = Elements[i];
+            var hash = new XXHash((uint)i);
 
+            // Vertices
             var p1 = e.Vertex1;
             var p2 = e.Vertex2;
             var p3 = e.Vertex3;
 
-            var uv1 = math.float4(e.UV1, 0, 0);
-            var uv2 = math.float4(e.UV2, 0, 0);
-            var uv3 = math.float4(e.UV3, 0, 0);
+            // Centroid
+            var pc = (p1 + p2 + p3) / 3;
 
-            var nrm = MathUtil.UnitOrtho(p2 - p1, p3 - p1);
-            var tan = MathUtil.AdHocTangent(nrm);
+            // Effect parameter
+            var eff = -math.mul(Effector, math.float4(pc, 1)).z;
+            eff -= hash.Float(0.4f, 3244);
 
-            var v1 = new Vertex(p1, nrm, tan, uv1);
-            var v2 = new Vertex(p2, nrm, tan, uv2);
-            var v3 = new Vertex(p3, nrm, tan, uv3);
+            // Triangle vertices
+            var triMod = 1 + math.smoothstep(0, 0.3f, eff) * 30;
+            var vt1 = math.lerp(pc, p1, triMod);
+            var vt2 = math.lerp(pc, p2, triMod);
+            var vt3 = math.lerp(pc, p3, triMod);
 
-            Output[i] = new VoxelOutput(v1, v2, v3, v1, v1, v2, v3, v1);
+            // Motion by noise
+            float3 nm;
+            noise.snoise(pc * 3.3f + math.float3(0, eff * 1.3f, 0), out nm);
+            pc += nm * 0.005f * (1 - math.smoothstep(0.6f, 0.7f, eff));
+
+            // Voxel travel
+            var trv = math.smoothstep(0.7f, 1.3f, eff);
+            pc.z -= trv * 2;
+
+            // Voxel size
+            var s1 = 1 + trv * 30;
+            var s2 = 1 - trv;
+            var size = 0.03f * math.float3(s2, s2, s1);
+
+            // Voxel vertices
+            var vc1 = pc + math.float3(-1, -1, -1) * size;
+            var vc2 = pc + math.float3(+1, -1, -1) * size;
+            var vc3 = pc + math.float3(-1, +1, -1) * size;
+            var vc4 = pc + math.float3(+1, +1, -1) * size;
+            var vc5 = pc + math.float3(-1, -1, +1) * size;
+            var vc6 = pc + math.float3(+1, -1, +1) * size;
+            var vc7 = pc + math.float3(-1, +1, +1) * size;
+            var vc8 = pc + math.float3(+1, +1, +1) * size;
+
+            // Triangle to voxel deformation
+            var vxlMod = math.smoothstep(0.1f, 0.3f, eff);
+            vc1 = math.lerp(vt1, vc1, vxlMod);
+            vc2 = math.lerp(vt2, vc2, vxlMod);
+            vc3 = math.lerp(vt3, vc3, vxlMod);
+            vc4 = math.lerp(vt3, vc4, vxlMod);
+            vc5 = math.lerp(vt1, vc5, vxlMod);
+            vc6 = math.lerp(vt2, vc6, vxlMod);
+            vc7 = math.lerp(vt3, vc7, vxlMod);
+            vc8 = math.lerp(vt3, vc8, vxlMod);
+
+            var em = math.saturate(eff * 10);
+            var uv1 = math.float4(e.UV1, em, em - vxlMod + trv);
+            var uv2 = math.float4(e.UV2, em, em - vxlMod + trv);
+            var uv3 = math.float4(e.UV3, em, em - vxlMod + trv);
+
+            Output[i] = new VoxelOutput
+              (vc1, uv1, vc2, uv2, vc3, uv3, vc4, uv3,
+               vc5, uv1, vc6, uv2, vc7, uv3, vc8, uv3);
         }
     }
 
@@ -236,15 +298,36 @@ static class VoxelizationEffect
         public void Execute(int i)
         {
             var e = Elements[i];
+            var hash = new XXHash((uint)i);
 
+            // Vertices
             var p1 = e.Vertex1;
             var p2 = e.Vertex2;
             var p3 = e.Vertex3;
 
-            var uv1 = math.float4(e.UV1, 0, 0);
-            var uv2 = math.float4(e.UV2, 0, 0);
-            var uv3 = math.float4(e.UV3, 0, 0);
+            // Centroid
+            var pc = (p1 + p2 + p3) / 3;
 
+            // Effect parameter
+            var eff = -math.mul(Effector, math.float4(pc, 1)).z;
+            eff -= hash.Float(0.4f, 3244);
+
+            // Motion by noise
+            float3 nm;
+            noise.snoise(pc * 3.3f, out nm);
+            pc += nm * 0.05f * math.smoothstep(0, 1, eff);
+
+            // Simple shrink
+            var mod = math.saturate(eff);
+            p1 = math.lerp(p1, pc, mod);
+            p2 = math.lerp(p2, pc, mod);
+            p3 = math.lerp(p3, pc, mod);
+
+            // Vertex attributes
+            var em = math.saturate(eff * 10);
+            var uv1 = math.float4(e.UV1, em, em);
+            var uv2 = math.float4(e.UV2, em, em);
+            var uv3 = math.float4(e.UV3, em, em);
             var nrm = MathUtil.UnitOrtho(p2 - p1, p3 - p1);
             var tan = MathUtil.AdHocTangent(nrm);
 

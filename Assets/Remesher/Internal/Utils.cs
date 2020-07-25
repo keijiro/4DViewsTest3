@@ -17,7 +17,7 @@ static class MathUtil
       => math.normalizesafe(math.cross(a, b));
 
     public static float4 AdHocTangent(float3 normal)
-      => math.float4(UnitOrtho(normal, math.float3(0, 1, 0)), 1);
+      => math.float4(UnitOrtho(normal, math.float3(0.01f, 1, 0.01f)), 1);
 }
 
 #endregion
