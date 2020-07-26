@@ -279,7 +279,8 @@ static class VoxelizationEffect
 
             // UV and material parameters
             var mat = math.saturate(eff * 10);
-            var emm = mat - vmod + mout;
+            var emm = mat - vmod +
+              math.smoothstep(0.6f, 0.7f, eff) * hash.Float(1.1f, 2.1f, 1893);
             var uv1 = math.float4(e.UV1, mat, emm);
             var uv2 = math.float4(e.UV2, mat, emm);
             var uv3 = math.float4(e.UV3, mat, emm);
