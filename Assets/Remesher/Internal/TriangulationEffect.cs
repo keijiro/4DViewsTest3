@@ -105,7 +105,7 @@ static class TriangulationEffect
             // UV coordinates
             var mat = (eff > 0.25f && eff < 0.75f) ? 1.0f : 0.0f;
             var emm = (sel ? math.pow(mod, 20) * 2 : 0) - mat;
-            var uv1 = math.float4(UV0[i1], mat, emm);
+            var uv1 = math.float4(UV0[i1], mat, math.clamp(emm, -1, 1));
             var uv2 = math.float4(UV0[i2], uv1.zw);
             var uv3 = math.float4(UV0[i3], uv1.zw);
 
