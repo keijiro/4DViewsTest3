@@ -18,6 +18,9 @@ static class MathUtil
 
     public static float4 AdHocTangent(float3 normal)
       => math.float4(UnitOrtho(normal, math.float3(0.01f, 1, 0.01f)), 1);
+
+    public static float3 Transform(in float4x4 matrix, float3 point)
+      => math.mul(matrix, math.float4(point, 1)).xyz;
 }
 
 #endregion

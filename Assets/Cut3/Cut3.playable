@@ -79,6 +79,29 @@ MonoBehaviour:
       cameraTag: 
       colorSpace: 0
       flipFinalOutput: 0
+--- !u!114 &-7999502983390744681
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48853ae485fa386428341ac1ea122570, type: 3}
+  m_Name: ControlPlayableAsset(Clone)(Clone)
+  m_EditorClassIdentifier: 
+  sourceGameObject:
+    exposedName: ccd75aad1fd78844384695f1177934bd
+    defaultValue: {fileID: 0}
+  prefabGameObject: {fileID: 0}
+  updateParticle: 0
+  particleRandomSeed: 9720
+  updateDirector: 0
+  updateITimeControl: 1
+  searchHierarchy: 0
+  active: 0
+  postPlayback: 2
 --- !u!114 &-7754587363247532245
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -231,29 +254,6 @@ AnimationClip:
   m_HasGenericRootTransform: 0
   m_HasMotionFloatCurves: 0
   m_Events: []
---- !u!114 &-5096523636790001482
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 48853ae485fa386428341ac1ea122570, type: 3}
-  m_Name: ControlPlayableAsset(Clone)
-  m_EditorClassIdentifier: 
-  sourceGameObject:
-    exposedName: 0be80507595528c4291eda7e256ab63d
-    defaultValue: {fileID: 0}
-  prefabGameObject: {fileID: 0}
-  updateParticle: 0
-  particleRandomSeed: 9720
-  updateDirector: 0
-  updateITimeControl: 1
-  searchHierarchy: 0
-  active: 0
-  postPlayback: 2
 --- !u!114 &-4517157321147783298
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -278,9 +278,9 @@ MonoBehaviour:
   - m_Version: 1
     m_Start: 0
     m_ClipIn: 25.5
-    m_Asset: {fileID: 6440000266144647884}
+    m_Asset: {fileID: 7025625397452968772}
     m_Duration: 6
-    m_TimeScale: 0.005
+    m_TimeScale: 0.001
     m_ParentTrack: {fileID: -4517157321147783298}
     m_EaseInDuration: 0
     m_EaseOutDuration: 0
@@ -475,9 +475,9 @@ MonoBehaviour:
   - m_Version: 1
     m_Start: 0
     m_ClipIn: 25.5
-    m_Asset: {fileID: -5096523636790001482}
+    m_Asset: {fileID: -7999502983390744681}
     m_Duration: 6
-    m_TimeScale: 0.005
+    m_TimeScale: 0.001
     m_ParentTrack: {fileID: 1540947670496093650}
     m_EaseInDuration: 0
     m_EaseOutDuration: 0
@@ -571,7 +571,7 @@ MonoBehaviour:
   m_Version: 3
   m_AnimClip: {fileID: 0}
   m_Locked: 0
-  m_Muted: 0
+  m_Muted: 1
   m_CustomPlayableFullTypename: 
   m_Curves: {fileID: 0}
   m_Parent: {fileID: 11400000}
@@ -648,7 +648,7 @@ MonoBehaviour:
     m_DisplayName: RecorderClip
   m_Markers:
     m_Objects: []
---- !u!114 &6440000266144647884
+--- !u!114 &7025625397452968772
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
@@ -658,10 +658,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 44d84dc3cdf9d044c9bd290c18ab5454, type: 3}
-  m_Name: AlembicShotAsset(Clone)
+  m_Name: AlembicShotAsset(Clone)(Clone)
   m_EditorClassIdentifier: 
   streamPlayer:
-    exposedName: 279de3530b5f9e3409ea3c2ab21a8b6b
+    exposedName: d25aca0bbbf9c694fb340d4efde48891
     defaultValue: {fileID: 0}
 --- !u!74 &7592093412258636253
 AnimationClip:

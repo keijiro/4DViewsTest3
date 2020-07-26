@@ -195,7 +195,7 @@ PrefabInstance:
     - target: {fileID: 1029844995004000303, guid: d2a89134d9305b943abd08a8f20e78f8,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1308750911648734870, guid: d2a89134d9305b943abd08a8f20e78f8,
         type: 3}
@@ -300,7 +300,7 @@ PrefabInstance:
     - target: {fileID: 6656729553040364680, guid: d2a89134d9305b943abd08a8f20e78f8,
         type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9073899900036865213, guid: d2a89134d9305b943abd08a8f20e78f8,
         type: 3}
@@ -676,7 +676,9 @@ PlayableDirector:
   m_ExposedReferences:
     m_References:
     - 30e0813c1cc1f2dc3b4dce381fb67c67: {fileID: 0}
+    - ccd75aad1fd78844384695f1177934bd: {fileID: 603200375}
     - dca84a84b4ab06d4e9e0968d4773ddb5: {fileID: 0}
+    - d25aca0bbbf9c694fb340d4efde48891: {fileID: 1757262448}
     - 47abf89c8935a2d5a94ed15d3d48cb89: {fileID: 0}
     - 0892b5fe9e9f373a78cf43dc6c822fbe: {fileID: 603200375}
     - 06b8e710d2529744c8cdb8e32df81621: {fileID: 1757262448}
