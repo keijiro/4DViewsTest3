@@ -163,12 +163,7 @@ static class DisintegrationEffect
           => math.mul(Eff, math.float4(position, 1)).z;
 
         float3 Acceleration(float3 position)
-        {
-            float3 n1, n2;
-            noise.snoise(position.xyz * +2.3f, out n1);
-            noise.snoise(position.zxy * -2.3f, out n2);
-            return math.cross(n1, n2) * 0.1f;
-        }
+          => MathUtil.DFNoise(position * 2.3f) * 0.1f;
 
         float3 Lift => math.float3(0, 0.1f, 0);
 

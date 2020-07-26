@@ -245,9 +245,9 @@ static class VoxelizationEffect
             v3 = math.lerp(p, v3, tmod);
 
             // Voxel motion by noise (stops before travelling)
-            float3 ngrad;
-            noise.snoise(p * 3.3f + math.float3(0, eff * 1.3f, 0), out ngrad);
-            p += ngrad * 0.005f * (1 - math.smoothstep(0.6f, 0.7f, eff));
+            var nmod = 1 - math.smoothstep(0.6f, 0.7f, eff);
+            var nfp = p * 3.3f + math.float3(0, eff * 0.4f, 0);
+            p += MathUtil.DFNoise(nfp) * 0.004f * nmod;
 
             // Voxel moving out
             var mout = math.smoothstep(0.7f, 1.3f, eff);
@@ -325,9 +325,8 @@ static class VoxelizationEffect
             v3 = math.lerp(v3, p, tmod);
 
             // Motion by noise
-            float3 ngrad;
-            noise.snoise(p * 3.3f, out ngrad);
-            var offs = ngrad * 0.05f * math.smoothstep(0, 1, eff);
+            var offs = MathUtil.DFNoise(p * 3.3f) * 0.02f;
+            offs *= math.smoothstep(0, 1, eff);
 
             v1 += offs;
             v2 += offs;

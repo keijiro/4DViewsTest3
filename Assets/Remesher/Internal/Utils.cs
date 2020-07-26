@@ -21,6 +21,14 @@ static class MathUtil
 
     public static float3 Transform(in float4x4 matrix, float3 point)
       => math.mul(matrix, math.float4(point, 1)).xyz;
+
+    public static float3 DFNoise(float3 position)
+    {
+        float3 n1, n2;
+        noise.snoise(+position.xyz + math.float3(3, 4, 5), out n1);
+        noise.snoise(-position.zxy - math.float3(2, 3, 4), out n2);
+        return math.cross(n1, n2);
+    }
 }
 
 #endregion
