@@ -426,7 +426,6 @@ Transform:
   m_Children:
   - {fileID: 9073899899854944728}
   - {fileID: 5201111962770307282}
-  - {fileID: 9073899900991495798}
   m_Father: {fileID: 4750609469796535014}
   m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -814,54 +813,6 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
---- !u!1 &9073899900991495797
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 9073899900991495798}
-  - component: {fileID: 9073899900991495799}
-  m_Layer: 0
-  m_Name: Abcvfx
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &9073899900991495798
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9073899900991495797}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 3680537375087991488}
-  m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &9073899900991495799
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9073899900991495797}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f5b13e05b6e00849cac9128807f07682, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _meshFilter: {fileID: 2766979385458890826}
-  _texture: {fileID: 0}
-  _hapPlayer: {fileID: 9073899899854944735}
-  _vertexCount: 98304
-  _compute: {fileID: 7200000, guid: a2932fdd586502f8a8e016fdde461ce6, type: 3}
 --- !u!1001 &2326134818303711325
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -945,12 +896,6 @@ PrefabInstance:
 --- !u!4 &5201111962770307282 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7522727221327061135, guid: 41a063a9da5455540825b598911fdb51,
-    type: 3}
-  m_PrefabInstance: {fileID: 2326134818303711325}
-  m_PrefabAsset: {fileID: 0}
---- !u!33 &2766979385458890826 stripped
-MeshFilter:
-  m_CorrespondingSourceObject: {fileID: 445397169696014359, guid: 41a063a9da5455540825b598911fdb51,
     type: 3}
   m_PrefabInstance: {fileID: 2326134818303711325}
   m_PrefabAsset: {fileID: 0}
