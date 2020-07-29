@@ -112,6 +112,7 @@ static class MeshUtil
         mesh.Clear();
 
         var vcount = vertices.Length;
+        var icount = indices.Length;
 
         mesh.SetVertexBufferParams(
           vcount,
@@ -128,10 +129,10 @@ static class MeshUtil
         );
         mesh.SetVertexBufferData(vertices, 0, 0, vcount);
 
-        mesh.SetIndexBufferParams(vcount, IndexFormat.UInt32);
-        mesh.SetIndexBufferData(indices, 0, 0, vcount);
+        mesh.SetIndexBufferParams(icount, IndexFormat.UInt32);
+        mesh.SetIndexBufferData(indices, 0, 0, icount);
 
-        mesh.SetSubMesh(0, new SubMeshDescriptor(0, vcount));
+        mesh.SetSubMesh(0, new SubMeshDescriptor(0, icount));
     }
 
     public static void UpdateWithVertexArray
