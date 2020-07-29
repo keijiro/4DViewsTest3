@@ -206,7 +206,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _config:
-    VertexCount: 80
+    VertexCount: 240
     Radius: 0.66
     Height: 0.7
     Motion:
@@ -944,7 +944,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 4ea926e75c7c7064180f5f4c032a2078, type: 2}
+  - {fileID: 2100000, guid: 815db87b0d2092b4a88f553ead69ac47, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

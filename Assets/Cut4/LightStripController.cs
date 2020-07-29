@@ -3,30 +3,8 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
-using Klak.Chromatics;
 
 namespace Remesher {
-
-#region Configuration struct
-
-[System.Serializable]
-public struct LightStripConfig
-{
-    public int VertexCount;
-    [Space]
-    public float Radius;
-    public float Height;
-    public float2 Motion;
-    [Space]
-    public CosineGradient Gradient;
-    public float GradientScroll;
-    [Space]
-    public float NoiseFrequency;
-    public float NoiseMotion;
-    public float NoiseAmplitude;
-}
-
-#endregion
 
 static class LightStripController
 {
@@ -193,18 +171,22 @@ static class LightStripController
                 var fs_b = math.normalizesafe(math.cross(fs_t, fs_n));
                 fs_n = math.normalizesafe(math.cross(fs_b, fs_t));
 
+                // Tangent/tex-coord
+                var tan = math.float4(fs_t, 1);
+                var tex= math.float4(c, 1);
+
                 for (var j = 0; j < VerticesPerRing; j++)
                 {
                     var theta = math.PI * 2 / VerticesPerRing * j;
-                    var uv = math.float2(math.cos(theta), math.sin(theta));
 
-                    var n = fs_n * uv.x + fs_b * uv.y;
+                    // Normal
+                    var n = fs_n * math.cos(theta) + fs_b * math.sin(theta);
 
-                    Output[outIdx++] = new Vertex(
-                      p + n * RingWidth,
-                      n, math.float4(fs_t, 1),
-                      math.float4(c, 1)
-                    );
+                    // Vertex position
+                    var v = p + n * RingWidth;
+
+                    // Output
+                    Output[outIdx++] = new Vertex(v, n, tan, tex);
                 }
             }
         }

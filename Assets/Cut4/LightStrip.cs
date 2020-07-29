@@ -3,8 +3,30 @@ using UnityEngine.Playables;
 using UnityEngine.Timeline;
 using Unity.Collections;
 using Unity.Mathematics;
+using Klak.Chromatics;
 
 namespace Remesher {
+
+//
+// LightStrip - Self emissive line strip
+//
+
+[System.Serializable]
+public struct LightStripConfig
+{
+    public int VertexCount;
+    [Space]
+    public float Radius;
+    public float Height;
+    public float2 Motion;
+    [Space]
+    public CosineGradient Gradient;
+    public float GradientScroll;
+    [Space]
+    public float NoiseFrequency;
+    public float NoiseMotion;
+    public float NoiseAmplitude;
+}
 
 [ExecuteInEditMode, RequireComponent(typeof(MeshRenderer))]
 public sealed class LightStrip :
@@ -79,8 +101,12 @@ public sealed class LightStrip :
         // Time update
         // (We don't support rewinding at the moment.)
         if (_time > _last)
-            LightStripController.Update
-              (_config, _elements, _time, _time - _last);
+        {
+            var dt = (_time - _last) / 3;
+            LightStripController.Update(_config, _elements, _time, dt);
+            LightStripController.Update(_config, _elements, _time + dt, dt);
+            LightStripController.Update(_config, _elements, _time + dt * 2, dt);
+        }
 
         _last = _time;
 
