@@ -206,8 +206,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _config:
-    Radius: 0.66
+    Radius: 0.7
     Height: 0.7
+    Thickness: 0.006
     Motion:
       x: 7.1231
       y: 3.132342
@@ -230,7 +231,7 @@ MonoBehaviour:
     GradientScroll: -0.7
     NoiseFrequency: 0.3
     NoiseMotion: 0.2
-    NoiseAmplitude: 0.02
+    NoiseAmplitude: 0.033
   _vertexCount: 360
   _timeStep: 0.005
 --- !u!4 &482771303

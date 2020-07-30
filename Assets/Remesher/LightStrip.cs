@@ -16,6 +16,7 @@ public struct LightStripConfig
 {
     public float Radius;
     public float Height;
+    public float Thickness;
     public float2 Motion;
     [Space]
     public CosineGradient Gradient;
@@ -50,8 +51,8 @@ public sealed class LightStrip :
 
     #region ITimeControl implementation
 
-    public void OnControlTimeStart() => _time = 0;
-    public void OnControlTimeStop() => _time = -1;
+    public void OnControlTimeStart() {}
+    public void OnControlTimeStop() {}
     public void SetTime(double time) => _time = (float)time;
 
     #endregion
@@ -69,6 +70,9 @@ public sealed class LightStrip :
     {
         _vertexCount = math.max(_vertexCount, 8);
         _timeStep = math.max(_timeStep, 1.0f / 60 / 10);
+
+        // Make the mesh reset on the next update.
+        _last = 1e+10f;
     }
 
     void OnDisable()
@@ -85,20 +89,18 @@ public sealed class LightStrip :
     void LateUpdate()
     {
         // Dispose the current state if _time is invalid.
-        if (_time < _last || _time < 0)
+        if (_time < _last)
         {
             OnDisable();
             OnDestroy();
         }
 
-        // Negative time: The module is disabled. Do nothing.
-        if (_time < 0) return;
-
         // Lazy initialization
         if (!_elements.IsCreated)
         {
-            _elements = LightStripController.Initialize(_config, _vertexCount);
-            _last = 0;
+            _elements = LightStripController.
+              Initialize(_config, _vertexCount, _time, _timeStep);
+            _last = _time;
         }
 
         if (_mesh == null)
@@ -125,8 +127,10 @@ public sealed class LightStrip :
         }
 
         // Mesh reconstruction
-        using (var vertices = LightStripController.BuildVertexArray(_elements))
-          using (var indices = LightStripController.BuildIndexArray(_elements))
+        using (var vertices =
+               LightStripController.BuildVertexArray(_config, _elements))
+          using (var indices =
+                 LightStripController.BuildIndexArray(_config, _elements))
             MeshUtil.UpdateWithVertexIndexArrays(_mesh, vertices, indices);
     }
 

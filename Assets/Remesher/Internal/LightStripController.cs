@@ -27,7 +27,6 @@ static class LightStripController
     #region Constant numbers
 
     const int VerticesPerRing = 6;
-    const float RingWidth = 0.006f;
 
     #endregion
 
@@ -49,10 +48,12 @@ static class LightStripController
     #region Element array initializer
 
     public static NativeArray<Element>
-      Initialize(in LightStripConfig config, int vertexCount)
+      Initialize(in LightStripConfig config, int vertexCount,
+                 float time, float deltaTime)
     {
         var output = MemoryUtil.Array<Element>(vertexCount);
-        new InitializeJob { Config = config, Elements = output }.Run();
+        new InitializeJob { Config = config, Elements = output,
+                            Time = time, DeltaTime = deltaTime }.Run();
         return output;
     }
 
@@ -62,15 +63,20 @@ static class LightStripController
     {
         [ReadOnly] public LightStripConfig Config;
 
+        public float Time;
+        public float DeltaTime;
+
         public NativeArray<Element> Elements;
 
         public void Execute()
         {
-            for (var i = 0; i < Elements.Length; i++)
+            var ecount = Elements.Length;
+
+            for (var i = 0; i < ecount; i++)
             {
-                var t = i / -30.0f;
+                var t = Time - (float)(ecount - i) * DeltaTime;
                 var p = GetVertexPosition(Config, t);
-                var c = GetVertexColor(Config, Elements.Length, i, t);
+                var c = GetVertexColor(Config, ecount, i, t);
                 Elements[i] = new Element(p, c);
             }
         }
@@ -131,12 +137,13 @@ static class LightStripController
 
     #region Vertex array builder
 
-    public static NativeArray<Vertex>
-      BuildVertexArray(NativeArray<Element> elements)
+    public static NativeArray<Vertex> BuildVertexArray
+      (in LightStripConfig config, NativeArray<Element> elements)
     {
         var vcount = elements.Length * VerticesPerRing;
         var output = MemoryUtil.TempJobArray<Vertex>(vcount);
-        new VertexBuildJob { Elements = elements, Output = output }.Run();
+        new VertexBuildJob { Elements = elements, Output = output,
+                             Thickness = config.Thickness }.Run();
         return output;
     }
 
@@ -145,6 +152,8 @@ static class LightStripController
     struct VertexBuildJob : IJob
     {
         [ReadOnly] public NativeArray<Element> Elements;
+
+        public float Thickness;
 
         [WriteOnly] public NativeArray<Vertex> Output;
 
@@ -187,7 +196,7 @@ static class LightStripController
                     var n = nrm * math.cos(theta) + bin * math.sin(theta);
 
                     // Vertex position
-                    var v = p + n * RingWidth;
+                    var v = p + n * Thickness;
 
                     // Output
                     Output[outIdx++] = new Vertex(v, n, vtan, vtex);
@@ -200,8 +209,8 @@ static class LightStripController
 
     #region Index array builder
 
-    public static NativeArray<uint>
-      BuildIndexArray(NativeArray<Element> elements)
+    public static NativeArray<uint> BuildIndexArray
+      (in LightStripConfig config, NativeArray<Element> elements)
     {
         var ecount = elements.Length;
         var icount = (ecount - 1) * VerticesPerRing * 3 * 2;
