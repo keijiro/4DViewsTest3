@@ -13,7 +13,7 @@
     "com.unity.render-pipelines.high-definition": "8.2.0",
     "com.unity.render-pipelines.high-definition-config": "file:../LocalPackages/com.unity.render-pipelines.high-definition-config",
     "jp.keijiro.kino.slog3": "1.0.0",
-    "jp.keijiro.klak.cosinegradient": "1.0.0",
+    "jp.keijiro.klak.cosinegradient": "1.0.1",
     "jp.keijiro.klak.hap": "0.1.18",
     "jp.keijiro.klak.math": "1.0.1",
     "jp.keijiro.noiseshader": "1.0.0",

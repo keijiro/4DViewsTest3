@@ -14,8 +14,6 @@ namespace Remesher {
 [System.Serializable]
 public struct LightStripConfig
 {
-    public int VertexCount;
-    [Space]
     public float Radius;
     public float Height;
     public float2 Motion;
@@ -35,6 +33,9 @@ public sealed class LightStrip :
     #region Editable attributes
 
     [SerializeField] LightStripConfig _config = default(LightStripConfig);
+    [Space]
+    [SerializeField] int _vertexCount = 100;
+    [SerializeField] float _timeStep = 1.0f / 60;
 
     #endregion
 
@@ -64,6 +65,12 @@ public sealed class LightStrip :
 
     #region MonoBehaviour implementation
 
+    void OnValidate()
+    {
+        _vertexCount = math.max(_vertexCount, 8);
+        _timeStep = math.max(_timeStep, 1.0f / 60 / 10);
+    }
+
     void OnDisable()
     {
         if (_elements.IsCreated) _elements.Dispose();
@@ -77,18 +84,20 @@ public sealed class LightStrip :
 
     void LateUpdate()
     {
-        if (_time < 0)
+        // Dispose the current state if _time is invalid.
+        if (_time < _last || _time < 0)
         {
-            // Negative time: The module is to be disabled.
             OnDisable();
             OnDestroy();
-            return;
         }
+
+        // Negative time: The module is disabled. Do nothing.
+        if (_time < 0) return;
 
         // Lazy initialization
         if (!_elements.IsCreated)
         {
-            _elements = LightStripController.Initialize(_config);
+            _elements = LightStripController.Initialize(_config, _vertexCount);
             _last = 0;
         }
 
@@ -98,17 +107,22 @@ public sealed class LightStrip :
             _mesh.bounds = new Bounds(Vector3.zero, Vector3.one * 10);
         }
 
-        // Time update
-        // (We don't support rewinding at the moment.)
-        if (_time > _last)
+        // Time advance steps
+        var dt = math.max((_time - _last) / 10, _timeStep);
+
+        while (_time - _last > dt)
         {
-            var dt = (_time - _last) / 3;
-            LightStripController.Update(_config, _elements, _time, dt);
-            LightStripController.Update(_config, _elements, _time + dt, dt);
-            LightStripController.Update(_config, _elements, _time + dt * 2, dt);
+            LightStripController.Update(_config, _elements, _last, dt);
+            _last += dt;
         }
 
-        _last = _time;
+        // Last step
+        if (_time > _last)
+        {
+            LightStripController.
+              Update(_config, _elements, _last, _time - _last);
+            _last = _time;
+        }
 
         // Mesh reconstruction
         using (var vertices = LightStripController.BuildVertexArray(_elements))

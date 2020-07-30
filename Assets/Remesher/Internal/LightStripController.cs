@@ -40,17 +40,18 @@ static class LightStripController
                      config.Radius * math.sin(config.Motion.x * time));
 
     public static float3 GetVertexColor
-      (in LightStripConfig config, int index, float time)
+      (in LightStripConfig config, int vcount, int vindex, float time)
       => config.Gradient.EvaluateAsFloat3
-        ((float)index / config.VertexCount + config.GradientScroll * time);
+           ((float)vindex / vcount + config.GradientScroll * time);
 
     #endregion
 
     #region Element array initializer
 
-    public static NativeArray<Element> Initialize(in LightStripConfig config)
+    public static NativeArray<Element>
+      Initialize(in LightStripConfig config, int vertexCount)
     {
-        var output = MemoryUtil.Array<Element>(config.VertexCount);
+        var output = MemoryUtil.Array<Element>(vertexCount);
         new InitializeJob { Config = config, Elements = output }.Run();
         return output;
     }
@@ -69,7 +70,7 @@ static class LightStripController
             {
                 var t = i / -30.0f;
                 var p = GetVertexPosition(Config, t);
-                var c = GetVertexColor(Config, i, t);
+                var c = GetVertexColor(Config, Elements.Length, i, t);
                 Elements[i] = new Element(p, c);
             }
         }
@@ -112,7 +113,7 @@ static class LightStripController
                 p += MathUtil.DFNoise(np) * DeltaTime * Config.NoiseAmplitude;
 
                 // Coloring
-                var c = GetVertexColor(Config, i, Time);
+                var c = GetVertexColor(Config, ecount, i, Time);
 
                 Elements[i] = new Element(p, c);
             }
@@ -120,7 +121,7 @@ static class LightStripController
             // Head animation
             {
                 var p = GetVertexPosition(Config, Time);
-                var c = GetVertexColor(Config, ecount - 1, Time);
+                var c = GetVertexColor(Config, ecount, ecount - 1, Time);
                 Elements[ecount - 1] = new Element(p, c);
             }
         }
@@ -151,6 +152,10 @@ static class LightStripController
         {
             var outIdx = 0;
 
+            // Initial normal vector
+            var tan0 = Elements[1].Position - Elements[0].Position;
+            var nrm = MathUtil.UnitOrtho(tan0, math.float3(0, 1, 0));
+
             for (var i = 0; i < Elements.Length; i++)
             {
                 // Current element
@@ -165,28 +170,27 @@ static class LightStripController
                 var p_p = Elements[i_p].Position;
                 var p_n = Elements[i_n].Position;
 
-                // Frenet-Serret frame
-                var fs_t = math.normalizesafe(p_n - p_p);
-                var fs_n = math.normalizesafe(p_n - p * 2 + p_p);
-                var fs_b = math.normalizesafe(math.cross(fs_t, fs_n));
-                fs_n = math.normalizesafe(math.cross(fs_b, fs_t));
+                // Orthogonal axes
+                var tan = math.normalizesafe(p_n - p_p);
+                var bin = MathUtil.UnitOrtho(tan, nrm);
+                nrm = MathUtil.UnitOrtho(bin, tan);
 
                 // Tangent/tex-coord
-                var tan = math.float4(fs_t, 1);
-                var tex= math.float4(c, 1);
+                var vtan = math.float4(tan, 1);
+                var vtex = math.float4(c, 1);
 
                 for (var j = 0; j < VerticesPerRing; j++)
                 {
                     var theta = math.PI * 2 / VerticesPerRing * j;
 
                     // Normal
-                    var n = fs_n * math.cos(theta) + fs_b * math.sin(theta);
+                    var n = nrm * math.cos(theta) + bin * math.sin(theta);
 
                     // Vertex position
                     var v = p + n * RingWidth;
 
                     // Output
-                    Output[outIdx++] = new Vertex(v, n, tan, tex);
+                    Output[outIdx++] = new Vertex(v, n, vtan, vtex);
                 }
             }
         }

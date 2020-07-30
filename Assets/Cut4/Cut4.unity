@@ -206,7 +206,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _config:
-    VertexCount: 240
     Radius: 0.66
     Height: 0.7
     Motion:
@@ -232,6 +231,8 @@ MonoBehaviour:
     NoiseFrequency: 0.3
     NoiseMotion: 0.2
     NoiseAmplitude: 0.02
+  _vertexCount: 360
+  _timeStep: 0.005
 --- !u!4 &482771303
 Transform:
   m_ObjectHideFlags: 0
