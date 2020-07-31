@@ -95,9 +95,14 @@ static class TriangulationEffect
             // Triangle scaling
             if (sel)
             {
+                // The longest edge length
+                var edge = math.max(math.length(v2 - v1), math.length(v3 - v1));
+
+                // Scaling factor
                 var sp = Config.ScaleParams;
                 var scale = math.pow(hash.Float(84792), sp.z);
-                scale = 1 + mod * math.lerp(sp.x, sp.y, scale);
+                scale = 1 + mod * math.lerp(sp.x, sp.y, scale) / edge;
+
                 v1 = math.lerp(p, v1, scale);
                 v2 = math.lerp(p, v2, scale);
                 v3 = math.lerp(p, v3, scale);

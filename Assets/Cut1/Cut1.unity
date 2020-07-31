@@ -844,8 +844,8 @@ MonoBehaviour:
   _config:
     EffectType: 1
     ScaleParams:
-      x: 5
-      y: 18
+      x: 0.05
+      y: 0.18
       z: 12
     Softness: 0.15
     Probability: 0.2

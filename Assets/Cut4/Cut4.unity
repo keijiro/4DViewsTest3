@@ -935,7 +935,7 @@ MonoBehaviour:
     EffectType: 0
     ScaleParams:
       x: 0
-      y: 4
+      y: 0.04
       z: 16
     Softness: 0.25
     Probability: 1
