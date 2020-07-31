@@ -9,8 +9,9 @@ namespace Remesher {
 
 static class TriangulationEffect
 {
-    public static NativeArray<Vertex>
-      Build(Mesh source, Transform transform, Transform effector)
+    public static NativeArray<Vertex> Build
+      (in TriangulationConfig config, Mesh source,
+       Transform transform, Transform effector)
     {
         using (var dataArray = Mesh.AcquireReadOnlyMeshData(source))
         {
@@ -22,28 +23,28 @@ static class TriangulationEffect
 
             // Source index array
             Debug.Assert(data.indexFormat == IndexFormat.UInt32);
-            var src_idx = data.GetIndexData<uint>();
+            var idx = data.GetIndexData<uint>();
 
             // Read buffer allocation
-            using (var src_pos = MemoryUtil.TempJobArray<float3>(vcount))
-            using (var src_uv0 = MemoryUtil.TempJobArray<float2>(vcount))
+            using (var vtx = MemoryUtil.TempJobArray<float3>(vcount))
+            using (var uvs = MemoryUtil.TempJobArray<float2>(vcount))
             {
                 // Retrieve vertex attribute arrays.
-                data.GetVertices(src_pos.Reinterpret<Vector3>());
-                data.GetUVs(0, src_uv0.Reinterpret<Vector2>());
+                data.GetVertices(vtx.Reinterpret<Vector3>());
+                data.GetUVs(0, uvs.Reinterpret<Vector2>());
 
                 // Output buffer
-                var out_vtx = MemoryUtil.TempJobArray<Vertex>(icount);
+                var output = MemoryUtil.TempJobArray<Vertex>(icount);
 
                 // Invoke and wait the array generator job.
                 new VertexArrayJob
-                  { Idx = src_idx, Pos = src_pos, UV0 = src_uv0,
-                    Xfm = transform.localToWorldMatrix,
-                    Eff = effector.worldToLocalMatrix,
-                    Out = out_vtx.Reinterpret<Triangle>(Vertex.StructSize) }
+                  { Config = config, Indices = idx, Vertices = vtx, UVs = uvs,
+                    Transform = transform.localToWorldMatrix,
+                    Effector = effector.worldToLocalMatrix,
+                    Output = output.Reinterpret<Triangle>(Vertex.StructSize) }
                   .Schedule(icount / 3, 64).Complete();
 
-                return out_vtx;
+                return output;
             }
         }
     }
@@ -52,67 +53,76 @@ static class TriangulationEffect
       FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
     struct VertexArrayJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<uint> Idx;
-        [ReadOnly] public NativeArray<float3> Pos;
-        [ReadOnly] public NativeArray<float2> UV0;
+        [ReadOnly] public NativeArray<uint> Indices;
+        [ReadOnly] public NativeArray<float3> Vertices;
+        [ReadOnly] public NativeArray<float2> UVs;
 
-        public float4x4 Xfm;
-        public float4x4 Eff;
+        public TriangulationConfig Config;
+        public float4x4 Transform;
+        public float4x4 Effector;
 
-        [WriteOnly] public NativeArray<Triangle> Out;
+        [WriteOnly] public NativeArray<Triangle> Output;
 
         public void Execute(int i)
         {
             var hash = new Klak.Math.XXHash((uint)i);
 
             // Indices
-            var i1 = (int)Idx[i * 3 + 0];
-            var i2 = (int)Idx[i * 3 + 1];
-            var i3 = (int)Idx[i * 3 + 2];
+            var i1 = (int)Indices[i * 3 + 0];
+            var i2 = (int)Indices[i * 3 + 1];
+            var i3 = (int)Indices[i * 3 + 2];
 
             // Vertex positions with transformation
-            var p1 = math.mul(Xfm, math.float4(Pos[i1], 1)).xyz;
-            var p2 = math.mul(Xfm, math.float4(Pos[i2], 1)).xyz;
-            var p3 = math.mul(Xfm, math.float4(Pos[i3], 1)).xyz;
+            var v1 = MathUtil.Transform(Transform, Vertices[i1]);
+            var v2 = MathUtil.Transform(Transform, Vertices[i2]);
+            var v3 = MathUtil.Transform(Transform, Vertices[i3]);
 
-            // Triangle centroid
-            var pc = (p1 + p2 + p3) / 3;
+            // Source position (triangle centroid)
+            var p = (v1 + v2 + v3) / 3;
 
             // Effect select
-            var sel = hash.Float(8394) < 0.1f;
+            var sel = hash.Float(8394) < Config.Probability;
 
             // Effect parameter
-            var eff = math.mul(Eff, math.float4(pc, 1)).z;
-            eff = math.saturate(eff + hash.Float(0, 0.1f, 2058));
+            var eff = MathUtil.Transform(Effector, p).z + 0.5f;
+            eff += hash.Float(-0.5f, 0.5f, 2058) * Config.Softness;
+            eff = math.saturate(eff);
 
             // Deformation parameter
-            var mod = (1 - math.cos(eff * math.PI * 4)) / 2;
+            var mod = eff * 2 * math.PI * (Config.EffectType + 1);
+            mod = (1 - math.cos(mod)) / 2;
 
             // Triangle scaling
             if (sel)
             {
-                var scale = math.pow(hash.Float(84792), 8);
-                scale = 1 + mod * math.lerp(5, 25, scale);
-                p1 = math.lerp(pc, p1, scale);
-                p2 = math.lerp(pc, p2, scale);
-                p3 = math.lerp(pc, p3, scale);
+                var sp = Config.ScaleParams;
+                var scale = math.pow(hash.Float(84792), sp.z);
+                scale = 1 + mod * math.lerp(sp.x, sp.y, scale);
+                v1 = math.lerp(p, v1, scale);
+                v2 = math.lerp(p, v2, scale);
+                v3 = math.lerp(p, v3, scale);
             }
 
             // Normal/Tangent
-            var nrm = MathUtil.UnitOrtho(p2 - p1, p3 - p1);
+            var nrm = MathUtil.UnitOrtho(v2 - v1, v3 - v1);
             var tan = MathUtil.AdHocTangent(nrm);
 
             // UV coordinates
-            var mat = (eff > 0.25f && eff < 0.75f) ? 1.0f : 0.0f;
+            var mat = (eff > 0.25f && eff < 0.75f) ? Config.EffectType : 0;
             var emm = (sel ? math.pow(mod, 20) * 2 : 0) - mat;
-            var uv1 = math.float4(UV0[i1], mat, math.clamp(emm, -1, 1));
-            var uv2 = math.float4(UV0[i2], uv1.zw);
-            var uv3 = math.float4(UV0[i3], uv1.zw);
+            var uv1 = math.float4(UVs[i1], mat, math.clamp(emm, -1, 1));
+            var uv2 = math.float4(UVs[i2], uv1.zw);
+            var uv3 = math.float4(UVs[i3], uv1.zw);
+
+            // Barycentric coordinates
+            var bc1 = math.float4(1, 0, 0, 0);
+            var bc2 = math.float4(0, 1, 0, 0);
+            var bc3 = math.float4(0, 0, 1, 0);
 
             // Output
-            Out[i] = new Triangle(new Vertex(p1, nrm, tan, uv1),
-                                  new Vertex(p2, nrm, tan, uv2),
-                                  new Vertex(p3, nrm, tan, uv3));
+            Output[i] = new Triangle(new Vertex(v1, nrm, tan, bc1, uv1),
+                                     new Vertex(v2, nrm, tan, bc2, uv2),
+                                     new Vertex(v3, nrm, tan, bc3, uv3));
         }
     }
 }

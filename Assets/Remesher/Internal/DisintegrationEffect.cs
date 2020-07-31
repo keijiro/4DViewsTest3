@@ -292,12 +292,12 @@ static class DisintegrationEffect
 
             // Output
             Output[i] = new TrianglePair
-              (new Vertex(v1, nrm1, tan1, uv1),
-               new Vertex(v2, nrm1, tan1, uv2),
-               new Vertex(v3, nrm1, tan1, uv3),
-               new Vertex(v4, nrm2, tan2, uv1),
-               new Vertex(v5, nrm2, tan2, uv2),
-               new Vertex(v6, nrm2, tan2, uv3));
+              (new Vertex(v1, nrm1, tan1, 1, uv1),
+               new Vertex(v2, nrm1, tan1, 1, uv2),
+               new Vertex(v3, nrm1, tan1, 1, uv3),
+               new Vertex(v4, nrm2, tan2, 1, uv1),
+               new Vertex(v5, nrm2, tan2, 1, uv2),
+               new Vertex(v6, nrm2, tan2, 1, uv3));
         }
     }
 

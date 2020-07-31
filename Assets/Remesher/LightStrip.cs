@@ -18,10 +18,8 @@ public struct LightStripConfig
     public float Height;
     public float Thickness;
     public float2 Motion;
-    [Space]
     public CosineGradient Gradient;
     public float GradientScroll;
-    [Space]
     public float NoiseFrequency;
     public float NoiseMotion;
     public float NoiseAmplitude;
@@ -34,7 +32,6 @@ public sealed class LightStrip :
     #region Editable attributes
 
     [SerializeField] LightStripConfig _config = default(LightStripConfig);
-    [Space]
     [SerializeField] int _vertexCount = 100;
     [SerializeField] float _timeStep = 1.0f / 60;
 

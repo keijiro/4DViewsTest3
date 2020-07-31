@@ -184,9 +184,9 @@ static class LightStripController
                 var bin = MathUtil.UnitOrtho(tan, nrm);
                 nrm = MathUtil.UnitOrtho(bin, tan);
 
-                // Tangent/tex-coord
+                // Tangent/color
                 var vtan = math.float4(tan, 1);
-                var vtex = math.float4(c, 1);
+                var vcol = math.float4(c, 1);
 
                 for (var j = 0; j < VerticesPerRing; j++)
                 {
@@ -199,7 +199,7 @@ static class LightStripController
                     var v = p + n * Thickness;
 
                     // Output
-                    Output[outIdx++] = new Vertex(v, n, vtan, vtex);
+                    Output[outIdx++] = new Vertex(v, n, vtan, vcol, 0);
                 }
             }
         }

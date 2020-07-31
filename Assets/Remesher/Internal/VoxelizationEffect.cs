@@ -70,9 +70,9 @@ static class VoxelizationEffect
         {
             var normal = MathUtil.UnitOrtho(v2 - v1, v3 - v1);
             var tangent = MathUtil.AdHocTangent(normal);
-            face = new Triangle(new Vertex(v1, normal, tangent, uv1),
-                                new Vertex(v2, normal, tangent, uv2),
-                                new Vertex(v3, normal, tangent, uv3));
+            face = new Triangle(new Vertex(v1, normal, tangent, 0, uv1),
+                                new Vertex(v2, normal, tangent, 0, uv2),
+                                new Vertex(v3, normal, tangent, 0, uv3));
         }
     }
 
@@ -235,7 +235,7 @@ static class VoxelizationEffect
             var p = (v1 + v2 + v3) / 3;
 
             // Effect parameter
-            var eff = -math.mul(Effector, math.float4(p, 1)).z;
+            var eff = -MathUtil.Transform(Effector, p).z;
             eff -= hash.Float(0.4f, 3244); // Random distribution
 
             // Triangle deformation (expand very fast)
@@ -344,9 +344,9 @@ static class VoxelizationEffect
             var uv3 = math.float4(e.UV3, em, em);
 
             // Output
-            Output[i] = new Triangle(new Vertex(v1, nrm, tan, uv1),
-                                     new Vertex(v2, nrm, tan, uv2),
-                                     new Vertex(v3, nrm, tan, uv3));
+            Output[i] = new Triangle(new Vertex(v1, nrm, tan, 0, uv1),
+                                     new Vertex(v2, nrm, tan, 0, uv2),
+                                     new Vertex(v3, nrm, tan, 0, uv3));
         }
     }
 

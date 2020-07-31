@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Mathematics;
 
 namespace Remesher {
 
@@ -6,11 +7,21 @@ namespace Remesher {
 // Triangulation - Flat shade + simple vertex effects
 //
 
+[System.Serializable]
+public struct TriangulationConfig
+{
+    public int EffectType;
+    public float3 ScaleParams;
+    [Range(0, 1)] public float Softness;
+    [Range(0, 1)] public float Probability;
+}
+
 [ExecuteInEditMode, RequireComponent(typeof(MeshRenderer))]
 public sealed class Triangulation : MonoBehaviour
 {
     #region Editable attributes
 
+    [SerializeField] TriangulationConfig _config = default(TriangulationConfig);
     [SerializeField] MeshFilter _source = null;
     [SerializeField] Transform _effector = null;
 
@@ -38,7 +49,7 @@ public sealed class Triangulation : MonoBehaviour
         if (_mesh == null) _mesh = MeshUtil.SetupWithMeshFilter(gameObject);
 
         using (var vertices = TriangulationEffect.Build
-                (_source.sharedMesh, _source.transform, _effector))
+                (_config, _source.sharedMesh, _source.transform, _effector))
           MeshUtil.UpdateWithVertexArray(_mesh, vertices);
 
         _mesh.bounds = GeomUtil.TransformBounds
